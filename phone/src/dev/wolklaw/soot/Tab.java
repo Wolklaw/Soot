@@ -126,7 +126,7 @@ final class Tab implements GeckoSession.NavigationDelegate, GeckoSession.Progres
         switch (error.category) {
             case WebRequestError.ERROR_CATEGORY_NETWORK: what = "Could not reach this site. Check the address and the connection."; break;
             case WebRequestError.ERROR_CATEGORY_SECURITY: what = "The connection to this site is not secure, so Soot stopped it."; break;
-            case WebRequestError.ERROR_CATEGORY_URI: what = "That address does not look right."; break;
+            case WebRequestError.ERROR_CATEGORY_URI: what = "Could not find this site. Check the address."; break;
             case WebRequestError.ERROR_CATEGORY_SAFEBROWSING: what = "This site is reported as harmful, so Soot stopped it."; break;
             case WebRequestError.ERROR_CATEGORY_PROXY: what = "The proxy refused the connection."; break;
             case WebRequestError.ERROR_CATEGORY_CONTENT: what = "The site answered with something Soot cannot show."; break;
