@@ -1,0 +1,12 @@
+pluginManagement {
+    repositories { google(); mavenCentral(); gradlePluginPortal() }
+}
+dependencyResolutionManagement {
+    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = 'https://maven.mozilla.org/maven2/' }     // GeckoView, Mozilla's engine for Android
+    }
+}
+rootProject.name = 'Soot'

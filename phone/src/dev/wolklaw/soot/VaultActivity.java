@@ -33,7 +33,7 @@ import java.text.DateFormat;
 import java.util.Date;
 
 /** Soot for Android: pair with the PC, keep an encrypted copy of the vault, show and copy logins, codes and notes. */
-public final class MainActivity extends Activity {
+public final class VaultActivity extends Activity {
     // house palette (terminal variant)
     static final int BG = 0xFF04090B, PANEL = 0xFF0A1517, PANEL2 = 0xFF0E1F22, LINE = 0xFF143A3D, LINE2 = 0xFF1F6A66,
             TEXT = 0xFFD4F1EC, MUTED = 0xFF6F9F98, DIM = 0xFF3B6460, ACCENT = 0xFF3DE8C8, ON_ACCENT = 0xFF02130F, PINK = 0xFFFF4D8D;
@@ -123,7 +123,7 @@ public final class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle saved) {
         super.onCreate(saved);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);      // keeps the vault out of screenshots and the recents list
+        if (BuildConfig.SECURE) getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);      // keeps the vault out of screenshots and the recents list
         root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(BG);

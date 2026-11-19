@@ -67,7 +67,7 @@ public final class SootAutofill extends AutofillService {
         for (int i = 0; i < n.getChildCount(); i++) walk(n.getChildAt(i), f);
     }
 
-    private static boolean matches(Vault.Login l, String domain, String pkg) {
+    static boolean matches(Vault.Login l, String domain, String pkg) {
         String host = l.host().toLowerCase();
         int slash = host.indexOf('/');
         if (slash > 0) host = host.substring(0, slash);
@@ -107,7 +107,7 @@ public final class SootAutofill extends AutofillService {
                 data = Vault.load(this);
             } catch (Exception locked) {
                 // the phone has not been unlocked recently enough: send the owner to Soot to unlock, then they tap the field again
-                Intent i = new Intent(this, MainActivity.class).putExtra("unlock", true);
+                Intent i = new Intent(this, VaultActivity.class).putExtra("unlock", true);
                 PendingIntent pi = PendingIntent.getActivity(this, 1, i, PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_MUTABLE);
                 callback.onSuccess(new FillResponse.Builder()
                         .setAuthentication(ids.toArray(new AutofillId[0]), pi.getIntentSender(), row("Unlock Soot to fill"))

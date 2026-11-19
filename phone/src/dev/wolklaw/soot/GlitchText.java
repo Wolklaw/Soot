@@ -36,7 +36,7 @@ final class GlitchText extends View {
     void setText(String t) { text = t; requestLayout(); invalidate(); }
 
     void burst() {
-        if (!ValueAnimator.areAnimatorsEnabled()) return;      // respects "remove animations"
+        if (!Ui.glitchOn(getContext())) return;      // off in the menu, or "remove animations" in Android
         for (int i = 0; i <= STEPS.length; i++) {
             final int s = i < STEPS.length ? i : -1;
             handler.postDelayed(() -> { step = s; invalidate(); }, i * 85L);
