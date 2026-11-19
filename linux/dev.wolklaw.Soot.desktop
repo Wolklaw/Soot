@@ -1,0 +1,22 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Soot
+GenericName=Web Browser
+Comment=A fast browser with nothing extra
+Exec=@BINDIR@/soot %u
+Icon=dev.wolklaw.Soot
+Terminal=false
+StartupNotify=true
+StartupWMClass=dev.wolklaw.Soot
+Categories=Network;WebBrowser;
+MimeType=text/html;text/xml;application/xhtml+xml;application/vnd.mozilla.xul+xml;x-scheme-handler/http;x-scheme-handler/https;
+Actions=new-window;new-private-window;
+
+[Desktop Action new-window]
+Name=New Window
+Exec=@BINDIR@/soot --new-window %u
+
+[Desktop Action new-private-window]
+Name=New Private Window
+Exec=@BINDIR@/soot --private %u

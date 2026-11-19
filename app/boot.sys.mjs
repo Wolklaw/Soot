@@ -6,11 +6,31 @@ const APP = ROOT.clone();
 APP.append("app");
 const HUB = "chrome://soot/content/hub.html";
 const APP_ID = "Soot.Browser";
+const WIN = Services.appinfo.OS === "WINNT";
 
 function file(...parts) {
   const f = APP.clone();
   for (const p of parts) f.append(p);
   return f;
+}
+
+// Where the rewritten engine texts live (see debrand below): app/l10n-auto. On Linux the app folder is
+// usually read-only (/usr/lib/soot); then install.sh has filled it already, and if it could not, the
+// texts go to the profile instead.
+function autoDir() {
+  const inApp = file("l10n-auto");
+  if (WIN || inApp.exists() || APP.isWritable()) return inApp;
+  const dir = Services.dirsvc.get("ProfD", Ci.nsIFile);
+  dir.append("soot-l10n-auto");
+  return dir;
+}
+
+// resource://soot-auto/ points at that folder, wherever it is
+function mapAutoDir() {
+  let spec = Services.io.newFileURI(autoDir()).spec;
+  if (!spec.endsWith("/")) spec += "/";          // a folder that does not exist yet comes back without one
+  Services.io.getProtocolHandler("resource").QueryInterface(Ci.nsIResProtocolHandler)
+    .setSubstitution("soot-auto", Services.io.newURI(spec));
 }
 
 // ---- name and logos: replace the engine's branding ----
@@ -19,14 +39,18 @@ function registerBranding() {
   try {
     Components.manager.QueryInterface(Ci.nsIComponentRegistrar).autoRegister(file("chrome.manifest"));
   } catch (e) { console.error(e); }
+  let haveAuto = false;
   try {
-    const auto = file("l10n-auto", "props.manifest");
+    mapAutoDir();
+    haveAuto = true;
+    const auto = autoDir();
+    auto.append("props.manifest");
     if (auto.exists()) Components.manager.QueryInterface(Ci.nsIComponentRegistrar).autoRegister(auto);
   } catch (e) { console.error(e); }
   try {
     const reg = L10nRegistry.getInstance();
-    if (!reg.hasSource("8-soot-auto")) {
-      reg.registerSources([new L10nFileSource("8-soot-auto", "app", ["en-US"], "resource://soot/l10n-auto/{locale}/")]);
+    if (haveAuto && !reg.hasSource("8-soot-auto")) {
+      reg.registerSources([new L10nFileSource("8-soot-auto", "app", ["en-US"], "resource://soot-auto/{locale}/")]);
     }
     if (!reg.hasSource("9-soot")) {
       reg.registerSources([new L10nFileSource("9-soot", "app", ["en-US"], "resource://soot/l10n/{locale}/")]);
@@ -39,7 +63,7 @@ function registerBranding() {
 const rename = s => s.replace(/Mozilla Firefox/g, "Soot").replace(/Firefox/g, "Soot");
 
 export async function debrand(force) {
-  const outRoot = PathUtils.join(APP.path, "l10n-auto");
+  const outRoot = autoDir().path;
   const stamp = PathUtils.join(outRoot, "build.txt");
   const build = Services.appinfo.appBuildID + ":3";
   if (!force) {
@@ -79,7 +103,7 @@ export async function debrand(force) {
           if (pkg === "branding") continue;
           const flat = pkg + "__" + parts.join("__");
           target = PathUtils.join(outRoot, "props", flat);
-          props.push("override chrome://" + pkg + "/locale/" + parts.join("/") + " resource://soot/l10n-auto/props/" + flat);
+          props.push("override chrome://" + pkg + "/locale/" + parts.join("/") + " resource://soot-auto/props/" + flat);
         }
         await IOUtils.makeDirectory(PathUtils.parent(target), { createAncestors: true });
         await IOUtils.writeUTF8(target, fixed);
@@ -399,6 +423,14 @@ export function start() {
     const obs = () => { Services.obs.removeObserver(obs, topic); try { fn(); } catch (e) { console.error(e); } };
     Services.obs.addObserver(obs, topic);
   };
+  // linux/install.sh starts the engine once with SOOT_PREGEN=1 to write the rewritten texts, then it quits.
+  if (Services.env.get("SOOT_PREGEN")) {
+    once("final-ui-startup", () => {
+      const quit = () => Services.startup.quit(Ci.nsIAppStartup.eForceQuit);
+      debrand(true).catch(e => console.error(e)).then(quit, quit);
+    });
+    return;
+  }
   once("final-ui-startup", () => {
     registerBranding(); addButtons();
     try { if (Phone.enabled) Phone.listen(); } catch (e) { console.error(e); }

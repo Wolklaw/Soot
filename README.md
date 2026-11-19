@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <b>A fast browser for Windows with nothing extra.</b><br>
+  <b>A fast browser for Windows and Linux with nothing extra.</b><br>
   Ads and trackers blocked, a password vault with its own lock, and no telemetry.
 </p>
 
@@ -19,7 +19,7 @@
 
 <p align="center">
   <a href="https://github.com/Wolklaw/Soot/releases/latest"><b>Download Soot</b></a><br>
-  Windows 10 or 11 · free · MIT license
+  Windows 10 or 11 · Linux x86_64 (new, see <a href="#linux">Linux</a>) · free · MIT license
 </p>
 
 <p align="center">
@@ -33,7 +33,7 @@
 
 ---
 
-Soot is a browser for Windows. Pages are drawn by **Gecko, the engine Firefox uses**, so sites work the
+Soot is a browser for Windows, with a new Linux port. Pages are drawn by **Gecko, the engine Firefox uses**, so sites work the
 way they do in Firefox. Soot is everything around the engine: its own look, a password vault that asks for
 its own password, ad and tracker blocking that is on from the first start, and privacy settings chosen so
 nothing is sent anywhere you did not ask for.
@@ -82,6 +82,42 @@ To bring your things over from another browser, press **CLEAR** in the toolbar, 
 BROWSER**: favourites, saved passwords and history from Chrome, Edge, Firefox and others on the PC.
 
 To remove Soot, delete its folder and the Start menu entry.
+
+### Linux
+
+Linux support is new. Soot comes preinstalled on [SparkOS](https://github.com/Wolklaw/sparkos); on other
+x86_64 distributions, install it from the source:
+
+```bash
+git clone https://github.com/Wolklaw/Soot && sudo bash Soot/linux/install.sh
+```
+
+The script downloads Mozilla's Linux build of the engine, checks it against Mozilla's published SHA-256
+list, and puts everything in `/usr/lib/soot`, with a `soot` command in `/usr/bin` and a menu entry.
+`--prefix`, `--bindir` and `--datadir` change those places, so it also installs into your home folder
+without root (`bash linux/install.sh --help`). It needs `curl`, `tar`, `xz` and the usual desktop
+libraries (GTK 3).
+
+What is different on Linux:
+
+- **Your data is in `~/.local/share/soot`**, not next to the program, because `/usr` is read-only on
+  image-based systems. Set `SOOT_PROFILE` to use another folder.
+- **The engine does not update itself.** Run `install.sh` again to get a new engine; on SparkOS the daily
+  image rebuild does it. Add-ons, uBlock filter lists and Safe Browsing lists update as on Windows.
+- `soot --private` opens a private window.
+
+What is not there yet, or not proven:
+
+- **It has been tested by an automated headless run only** ([`linux/smoke-test.py`](linux/smoke-test.py),
+  run on Fedora for every change): settings, policies, the vault code and Soot's pages load. Nobody has
+  yet checked the interface by eye on a Linux desktop, so the title bar buttons and effects may need fixes.
+- **Phone sync's firewall step is untested.** With firewalld, Soot asks once (through `pkexec`) for an
+  opening on port 47600 from home-network and Tailscale addresses. Other firewalls are yours to open.
+- **Importing from another browser** depends on what the engine supports on Linux; fewer browsers than
+  on Windows.
+- **If `/etc/firefox/policies/policies.json` exists**, the engine reads it instead of Soot's policies.
+- System monitors list the process as `firefox`. ARM is not supported. There is no package (rpm, deb,
+  Flatpak) yet.
 
 ## Features
 
@@ -214,6 +250,7 @@ in [`launcher/Soot.cs`](launcher/Soot.cs) and `build.cmd` rebuilds it.
 | `launcher\` | Source of `Soot.exe` and the icon script. |
 | `phone\` | The Android app: source, and `Soot.apk` in the release. |
 | `setup.cmd` | Downloads the engine again, to repair it or start from a clean one. |
+| `linux\` | The Linux port: `install.sh`, the `soot` launcher (what `Soot.exe` is on Windows), the menu entry and the smoke test. |
 
 ## Building
 
