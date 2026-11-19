@@ -1,0 +1,141 @@
+#!/bin/bash
+# Soot launcher for Linux. Does what launcher/Soot.cs does on Windows: prepares the profile, then starts
+# the engine with Soot's own profile, settings and interface.
+#
+# The browser lives in the folder this script is in (engine/, app/, config/), which may be read-only.
+# Your data lives in ~/.local/share/soot (or $XDG_DATA_HOME/soot). Set SOOT_PROFILE to use another folder.
+set -u
+
+CONFIG_VERSION=2              # keep equal to ConfigVersion in launcher/Soot.cs
+APP_ID=dev.wolklaw.Soot       # window class and Wayland app id; matches dev.wolklaw.Soot.desktop
+PHONE_PORT=47600              # must match Phone.PORT in app/boot.sys.mjs
+# Phone sync is reachable from home networks and Tailscale (100.64.0.0/10), not from the open internet.
+PHONE_SOURCES="10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 100.64.0.0/10"
+
+self=$(readlink -f "${BASH_SOURCE[0]}")
+root=$(dirname "$self")
+engine_dir=$root/engine
+engine=$engine_dir/firefox
+config=$root/config
+profile=${SOOT_PROFILE:-${XDG_DATA_HOME:-$HOME/.local/share}/soot}
+
+# ---- phone sync: one firewall opening, asked for once ----
+
+phone_rule() { printf 'rule family="ipv4" source address="%s" port port="%s" protocol="tcp" accept' "$1" "$PHONE_PORT"; }
+
+# true when the firewall already lets the phone in: no firewalld running, a zone that opens the port, or our rules
+phone_port_open() {
+  command -v firewall-cmd >/dev/null 2>&1 || return 0
+  firewall-cmd --state >/dev/null 2>&1 || return 0
+  local entry range lo hi src
+  for entry in $(firewall-cmd --list-ports 2>/dev/null); do
+    [ "${entry##*/}" = tcp ] || continue
+    range=${entry%/*}; lo=${range%-*}; hi=${range#*-}
+    [ "$lo" -le "$PHONE_PORT" ] 2>/dev/null && [ "$hi" -ge "$PHONE_PORT" ] 2>/dev/null && return 0
+  done
+  for src in $PHONE_SOURCES; do
+    firewall-cmd --query-rich-rule="$(phone_rule "$src")" >/dev/null 2>&1 || return 1
+  done
+  return 0
+}
+
+# Called by the Phone page. Exit 0 when the opening exists, like Soot.exe --allow-phone-sync.
+allow_phone_sync() {
+  phone_port_open && return 0
+  command -v pkexec >/dev/null 2>&1 || return 2
+  pkexec "$self" --add-firewall-rule >/dev/null 2>&1      # the system asks for the password once
+  phone_port_open && return 0
+  return 2
+}
+
+# Runs as root through pkexec: the same rules now and after a reboot.
+add_firewall_rule() {
+  local src rule
+  for src in $PHONE_SOURCES; do
+    rule=$(phone_rule "$src")
+    firewall-cmd --permanent --add-rich-rule="$rule" >/dev/null || return 3
+    firewall-cmd --add-rich-rule="$rule" >/dev/null || return 3
+  done
+  return 0
+}
+
+case "${1:-}" in
+  --allow-phone-sync) allow_phone_sync; exit $? ;;
+  --add-firewall-rule) add_firewall_rule; exit $? ;;
+esac
+
+# ---- profile ----
+
+if [ ! -x "$engine" ]; then
+  echo "Soot: the engine is missing from $engine_dir. Run linux/install.sh again." >&2
+  exit 1
+fi
+
+hash_of() { cat "$@" 2>/dev/null | sha256sum | cut -d' ' -f1; }
+
+prepare_profile() {
+  [ -d "$profile" ] || { mkdir -p "$profile" && chmod 700 "$profile"; } || return 1
+  # Interface styles are refreshed on every start.
+  mkdir -p "$profile/chrome" || return 1
+  local f dst
+  for f in "$config"/chrome/*; do
+    [ -f "$f" ] || continue
+    dst=$profile/chrome/${f##*/}
+    cmp -s "$f" "$dst" || install -m 644 "$f" "$dst" || return 1
+  done
+  # Default settings are applied once per config version, so later changes in Settings stick.
+  # (Hashes, not file times: image-based systems such as SparkOS reset every file time under /usr.)
+  local stamp=$profile/soot-config-version want have=
+  want=$CONFIG_VERSION:$(hash_of "$config/user.js")
+  [ -f "$stamp" ] && have=$(cat "$stamp")
+  if [ "$have" != "$want" ]; then
+    install -m 644 "$config/user.js" "$profile/user.js" || return 1
+    printf '%s\n' "$want" > "$stamp"
+    rm -rf "$profile/startupCache"       # the engine caches interface code; drop it when Soot's files change
+  else
+    rm -f "$profile/user.js"
+  fi
+  # Soot's own code is cached by the engine too; drop that cache when boot.sys.mjs or the manifest changes.
+  local app_stamp=$profile/soot-app-version app_want app_have=
+  app_want=$(hash_of "$root/app/boot.sys.mjs" "$root/app/chrome.manifest")
+  [ -f "$app_stamp" ] && app_have=$(cat "$app_stamp")
+  if [ "$app_have" != "$app_want" ]; then
+    rm -rf "$profile/startupCache"
+    printf '%s\n' "$app_want" > "$app_stamp"
+  fi
+}
+
+prepare_profile || echo "Soot: could not prepare the profile in $profile" >&2
+
+# IPv4 addresses of this PC on networks that have a gateway, plus Tailscale ones, for the Phone page.
+lan_addresses() {
+  command -v ip >/dev/null 2>&1 || return 0
+  local gateways=" " line word prev out= ifc addr second
+  while read -r line; do
+    prev=
+    for word in $line; do [ "$prev" = dev ] && gateways+="$word "; prev=$word; done
+  done < <(ip -4 route show default 2>/dev/null)
+  while read -r _ ifc _ addr _; do
+    addr=${addr%/*}
+    case $addr in 127.*|169.254.*|"") continue ;; esac
+    second=${addr#*.}; second=${second%%.*}
+    if [[ $gateways == *" $ifc "* ]] || { [[ $addr == 100.* ]] && [ "$second" -ge 64 ] && [ "$second" -le 127 ]; }; then
+      out+=${out:+,}$addr
+    fi
+  done < <(ip -4 -o addr show 2>/dev/null)
+  printf '%s' "$out"
+}
+
+args=()
+for a in "$@"; do
+  [ "$a" = --private ] && a=-private-window
+  args+=("$a")
+done
+
+export MOZ_CRASHREPORTER_DISABLE=1
+SOOT_LAN_IPS=$(lan_addresses); export SOOT_LAN_IPS
+# Vault password stretching: 600,000 rounds of PBKDF2-SHA256 instead of the engine's 10,000.
+export NSS_MIN_MP_PBE_ITERATION_COUNT=600000
+export NSS_MAX_MP_PBE_ITERATION_COUNT=600000
+
+exec "$engine" --name "$APP_ID" --class "$APP_ID" -profile "$profile" "${args[@]}"

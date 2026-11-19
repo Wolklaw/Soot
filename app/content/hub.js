@@ -5,6 +5,9 @@
 const { Phone, Vault } = ChromeUtils.importESModule("resource://soot/boot.sys.mjs");
 const $ = (sel, root = document) => root.querySelector(sel);
 const topWin = window.browsingContext.topChromeWindow;
+const WIN = Services.appinfo.OS === "WINNT";
+// a few sentences name Windows; elsewhere they carry their wording for this system in data-other
+if (!WIN) for (const node of document.querySelectorAll("[data-other]")) node.textContent = node.dataset.other;
 
 function el(tag, props = {}, ...kids) {
   const e = document.createElement(tag);
@@ -734,17 +737,17 @@ async function renderPhone() {
 $("#ph-toggle").addEventListener("click", e => {
   const btn = e.currentTarget;
   if (Phone.enabled) { Phone.setEnabled(false); renderPhone(); tear(); return; }
-  // Turning it on needs one firewall opening. Soot's launcher asks Windows for it under Soot's own name.
-  btn.textContent = "WAITING FOR WINDOWS...";
+  // Turning it on needs one firewall opening. Soot's launcher asks the system for it under Soot's own name.
+  btn.textContent = WIN ? "WAITING FOR WINDOWS..." : "WAITING FOR THE FIREWALL...";
   try {
     const exe = Services.dirsvc.get("GreD", Ci.nsIFile).parent;
-    exe.append("Soot.exe");
+    exe.append(WIN ? "Soot.exe" : "soot");
     const proc = Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess);
     proc.init(exe);
     proc.runAsync(["--allow-phone-sync"], 1, {
       observe() {
         if (proc.exitValue === 0) { try { Phone.setEnabled(true); } catch (err) { console.error(err); } renderPhone(); tear(); }
-        else { renderPhone().then(() => { btn.textContent = "WINDOWS SAID NO. PRESS TO TRY AGAIN"; }); tear(); }
+        else { renderPhone().then(() => { btn.textContent = (WIN ? "WINDOWS" : "THE FIREWALL") + " SAID NO. PRESS TO TRY AGAIN"; }); tear(); }
       },
     });
   } catch (err) { console.error(err); renderPhone(); }

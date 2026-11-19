@@ -1,0 +1,56 @@
+name: Linux install and smoke test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    container: registry.fedoraproject.org/fedora:latest
+    steps:
+      - name: Tools the script needs, and the libraries the engine needs to start
+        run: >
+          dnf -y install git-core curl tar xz findutils diffutils python3
+          gtk3 dbus-glib libXt alsa-lib libX11-xcb mesa-libgbm pciutils-libs
+
+      - uses: actions/checkout@v4
+
+      - name: Install Soot
+        run: bash linux/install.sh --prefix /usr/lib/soot --require-pregen
+
+      - name: Files are where SparkOS expects them
+        run: |
+          set -eux
+          test -x /usr/lib/soot/engine/firefox
+          test -f /usr/lib/soot/engine/soot.cfg
+          test -f /usr/lib/soot/engine/defaults/pref/soot-autoconfig.js
+          grep -q '"DisableAppUpdate": true' /usr/lib/soot/engine/distribution/policies.json
+          python3 -c 'import json; json.load(open("/usr/lib/soot/engine/distribution/policies.json"))'
+          test -f /usr/lib/soot/app/boot.sys.mjs
+          test -f /usr/lib/soot/app/l10n-auto/build.txt
+          test "$(readlink -f /usr/bin/soot)" = /usr/lib/soot/soot
+          grep -q '^Exec=/usr/bin/soot %u$' /usr/share/applications/dev.wolklaw.Soot.desktop
+          test -f /usr/share/icons/hicolor/128x128/apps/dev.wolklaw.Soot.png
+          grep -q 'Customize Soot' /usr/lib/soot/app/l10n-auto/en-US/browser/profile/default-bookmarks.ftl
+          # only the engine's self-updater is off: add-on and Safe Browsing updates are not touched
+          if grep -rnE 'extensions\.update\.|safebrowsing|DisableSafeBrowsing|ExtensionUpdate' config/user.js config/policies.json; then exit 1; fi
+
+      - name: Headless smoke test
+        run: python3 linux/smoke-test.py --soot /usr/bin/soot --expect-pregen
+
+      - name: Second start keeps the profile and drops user.js
+        run: |
+          set -eux
+          export SOOT_PROFILE=/tmp/soot-second HOME=/tmp/soot-home
+          mkdir -p "$HOME"
+          timeout 60 soot --headless --no-remote --screenshot /tmp/shot.png about:blank || true
+          test -f "$SOOT_PROFILE/soot-config-version"
+          test -f "$SOOT_PROFILE/chrome/userChrome.css"
+          timeout 60 soot --headless --no-remote --screenshot /tmp/shot.png about:blank || true
+          test ! -f "$SOOT_PROFILE/user.js"
