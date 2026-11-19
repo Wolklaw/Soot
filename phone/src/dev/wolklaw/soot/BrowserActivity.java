@@ -67,6 +67,7 @@ public final class BrowserActivity extends Activity implements Tab.Host, Engine.
         root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(Ui.BG);
+        root.setFocusableInTouchMode(true);       // so the address bar does not grab the keyboard when the app opens
         root.setOnApplyWindowInsetsListener((v, insets) -> {
             Insets bars = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.ime());
             v.setPadding(0, fullScreen ? 0 : bars.top, 0, fullScreen ? 0 : bars.bottom);
@@ -194,7 +195,9 @@ public final class BrowserActivity extends Activity implements Tab.Host, Engine.
         if (intent == null || !Intent.ACTION_VIEW.equals(intent.getAction()) || intent.getData() == null) return;
         String scheme = intent.getData().getScheme();
         if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) return;
-        show(Tab.open(this, false, intent.getData().toString()));
+        String to = intent.getData().toString();
+        if (Tab.current != null && Tab.current.home && !Tab.current.priv) Tab.current.load(to);     // reuse an empty tab
+        else show(Tab.open(this, false, to));
     }
 
     @Override
@@ -230,6 +233,7 @@ public final class BrowserActivity extends Activity implements Tab.Host, Engine.
         t.session.setPromptDelegate(this);
         t.session.setActive(true);
         address.clearFocus();
+        view.requestFocus();
         bar.burst();
         refresh();
     }

@@ -67,6 +67,7 @@ final class Engine {
 
         GeckoRuntimeSettings settings = new GeckoRuntimeSettings.Builder()
                 .contentBlocking(blocking)
+                .extensionsProcessEnabled(true)                // uBlock Origin runs in a process of its own, not in the app's main one
                 .globalPrivacyControlEnabled(true)             // tell sites not to sell or share data
                 .configFilePath(prefsFile(app))                // the rest of Soot's defaults, see assets/soot-prefs.yaml
                 .preferredColorScheme(GeckoRuntimeSettings.COLOR_SCHEME_DARK)
@@ -119,7 +120,11 @@ final class Engine {
     private static void installBlocker(WebExtensionController controller) {
         setBlocker(BLOCKER_INSTALLING, "");
         controller.install(UBO_XPI).accept(
-                ext -> controller.setAllowedInPrivateBrowsing(ext, true).accept(Engine::blockerReady, e -> blockerReady(ext)),
+                ext -> {
+                    // private tabs were granted in the install prompt; ask again only if that did not stick (it restarts the add-on)
+                    if (ext.metaData != null && ext.metaData.allowedInPrivateBrowsing) blockerReady(ext);
+                    else controller.setAllowedInPrivateBrowsing(ext, true).accept(Engine::blockerReady, e -> blockerReady(ext));
+                },
                 e -> {
                     Log.w(TAG, "uBlock Origin install failed", e);
                     setBlocker(BLOCKER_FAILED, e == null || e.getMessage() == null ? "no connection" : e.getMessage());
@@ -170,7 +175,9 @@ final class Engine {
                 try {
                     Vault.Data data = Vault.load(app);
                     if (data != null) for (Vault.Login l : data.logins) {
-                        if (l.origin == null || !l.origin.startsWith("http") || !SootAutofill.matches(l, domain, "")) continue;
+                        // the engine asks by site name (example.com); a login saved for the site or one of its subdomains fits
+                        String host = l.origin == null || !l.origin.startsWith("http") ? null : android.net.Uri.parse(l.origin).getHost();
+                        if (host == null || !(host.equalsIgnoreCase(domain) || host.toLowerCase().endsWith("." + domain.toLowerCase()))) continue;
                         out.add(new Autocomplete.LoginEntry.Builder()
                                 .guid(Integer.toHexString((l.origin + "\n" + l.user).hashCode()))
                                 .origin(l.origin.replaceFirst("^(https?://[^/]+).*$", "$1"))

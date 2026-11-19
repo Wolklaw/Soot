@@ -67,7 +67,7 @@ public final class SootAutofill extends AutofillService {
         for (int i = 0; i < n.getChildCount(); i++) walk(n.getChildAt(i), f);
     }
 
-    static boolean matches(Vault.Login l, String domain, String pkg) {
+    private static boolean matches(Vault.Login l, String domain, String pkg) {
         String host = l.host().toLowerCase();
         int slash = host.indexOf('/');
         if (slash > 0) host = host.substring(0, slash);
