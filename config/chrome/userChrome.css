@@ -1,0 +1,572 @@
+/* Soot interface. House style: calm dark surfaces, sharp 3px corners, mono type,
+   and one fault: a magenta and a cyan channel slipping out of register. */
+
+:root {
+  --wn-bg: #04090b;
+  --wn-panel: #0a1517;
+  --wn-panel-2: #0e1f22;
+  --wn-hover: #12292c;
+  --wn-line: #143a3d;
+  --wn-line-2: #1f6a66;
+  --wn-text: #d4f1ec;
+  --wn-muted: #6f9f98;
+  --wn-dim: #3b6460;
+  --wn-accent: #3de8c8;
+  --wn-on-accent: #02130f;
+  --wn-pink: #ff4d8d;
+  --ch-a: #ff2e88;
+  --ch-b: #22d8ff;
+  --split: 4px 0 0 var(--ch-a), -4px 0 0 var(--ch-b);
+  --split-sm: 3px 0 0 var(--ch-a), -3px 0 0 var(--ch-b);
+  --wn-r: 3px;
+  --wn-font: "Cascadia Mono", "Cascadia Code", Consolas, monospace;
+
+  /* engine theme tokens, pointed at the palette */
+  --border-radius-xsmall: 3px !important;
+  --border-radius-small: 3px !important;
+  --border-radius-medium: 3px !important;
+  --border-radius-large: 3px !important;
+  --border-radius-xlarge: 3px !important;
+  --tab-border-radius: 3px !important;
+  --toolbarbutton-border-radius: 3px !important;
+  --urlbar-border-radius: 3px !important;
+  --arrowpanel-border-radius: 3px !important;
+  --panel-border-radius: 3px !important;
+  --arrowpanel-menuitem-border-radius: 3px !important;
+  --color-accent-primary: var(--wn-accent) !important;
+  --color-accent-primary-hover: #74f2da !important;
+  --color-accent-primary-active: #2bc4a8 !important;
+  --focus-outline-color: var(--wn-accent) !important;
+  --toolbarbutton-icon-fill: var(--wn-muted) !important;
+  --toolbarbutton-icon-fill-attention: var(--wn-accent) !important;
+  --toolbarbutton-hover-background: var(--wn-hover) !important;
+  --toolbarbutton-active-background: var(--wn-panel-2) !important;
+  --toolbar-bgcolor: var(--wn-panel) !important;
+  --toolbar-color: var(--wn-text) !important;
+  --toolbar-field-background-color: var(--wn-bg) !important;
+  --toolbar-field-color: var(--wn-text) !important;
+  --toolbar-field-border-color: var(--wn-line) !important;
+  --toolbar-field-focus-background-color: var(--wn-bg) !important;
+  --toolbar-field-focus-color: var(--wn-text) !important;
+  --toolbar-field-focus-border-color: var(--wn-accent) !important;
+  --arrowpanel-background: var(--wn-panel) !important;
+  --arrowpanel-color: var(--wn-text) !important;
+  --arrowpanel-border-color: var(--wn-line-2) !important;
+  --panel-background: var(--wn-panel) !important;
+  --panel-color: var(--wn-text) !important;
+  --panel-border-color: var(--wn-line-2) !important;
+  --panel-separator-color: var(--wn-line) !important;
+  --panel-item-hover-bgcolor: var(--wn-hover) !important;
+  --panel-item-active-bgcolor: var(--wn-panel-2) !important;
+  --button-background-color-primary: var(--wn-accent) !important;
+  --button-background-color-primary-hover: #74f2da !important;
+  --button-background-color-primary-active: #2bc4a8 !important;
+  --button-text-color-primary: var(--wn-on-accent) !important;
+  --button-text-color-primary-hover: var(--wn-on-accent) !important;
+  --urlbarView-highlight-background: var(--wn-hover) !important;
+  --urlbarView-highlight-color: var(--wn-text) !important;
+  --urlbarView-hover-background: var(--wn-panel-2) !important;
+  --urlbarView-separator-color: var(--wn-line) !important;
+  --link-color: var(--wn-accent) !important;
+  --tabpanel-background-color: var(--wn-bg) !important;
+  --chrome-content-separator-color: var(--wn-line) !important;
+  --sidebar-background-color: var(--wn-panel) !important;
+  --sidebar-text-color: var(--wn-text) !important;
+}
+
+/* ---------- surfaces ---------- */
+
+#main-window,
+#main-window > body {
+  background-color: var(--wn-bg) !important;
+  background-image: none !important;
+  color: var(--wn-text) !important;
+}
+
+#navigator-toolbox {
+  background-color: var(--wn-bg) !important;
+  background-image: none !important;
+  border-bottom: 1px solid var(--wn-line) !important;
+  color: var(--wn-text) !important;
+}
+
+#TabsToolbar {
+  background-color: var(--wn-bg) !important;
+  background-image: none !important;
+}
+
+#nav-bar {
+  background-color: var(--wn-panel) !important;
+  background-image: none !important;
+  border-top: 1px solid var(--wn-line) !important;
+  box-shadow: none !important;
+}
+
+#PersonalToolbar {
+  background-color: var(--wn-panel) !important;
+  border-top: 1px solid var(--wn-line) !important;
+}
+
+#browser,
+#tabbrowser-tabbox,
+#tabbrowser-tabpanels {
+  background-color: var(--wn-bg) !important;
+}
+
+/* mono type across the interface, but not the caption glyphs */
+#navigator-toolbox :is(label, description, input, .tab-text, .toolbarbutton-text, .urlbarView, moz-urlbar),
+#urlbar,
+#urlbar-input,
+.urlbarView,
+menupopup, menu, menuitem,
+panel, panelview, .subviewbutton, .panel-header,
+#statuspanel-label,
+findbar, tooltip {
+  font-family: var(--wn-font) !important;
+}
+
+/* ---------- wordmark in the tab strip ---------- */
+
+#nav-bar > .titlebar-spacer[type="pre-tabs"] {
+  display: flex !important;
+  position: relative;
+  align-items: center;
+  width: auto !important;
+  min-width: 0 !important;
+  padding-inline: 14px 12px;
+  border: 0 !important;
+}
+
+#nav-bar > .titlebar-spacer[type="pre-tabs"]::before,
+#nav-bar > .titlebar-spacer[type="pre-tabs"]::after {
+  content: "SOOT";
+  font: 700 12px/1 var(--wn-font);
+  letter-spacing: 0.1em;
+}
+
+#nav-bar > .titlebar-spacer[type="pre-tabs"]::before {
+  color: var(--wn-text);
+  text-shadow: 1px 0 var(--ch-a), -1px 0 var(--ch-b);
+}
+
+#nav-bar > .titlebar-spacer[type="pre-tabs"]::after {
+  position: absolute;
+  inset-inline-start: 14px;
+  color: var(--ch-a);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* new tabs carry the Soot mark instead of the engine's logo */
+.tab-icon-image[src="chrome://branding/content/icon32.png"],
+.tab-icon-image[src^="chrome://branding/content/icon"] {
+  content: url("soot.png") !important;
+}
+
+#urlbar .searchmode-switcher {
+  background-color: var(--wn-panel-2) !important;
+  --button-border-radius: 3px;
+}
+
+/* ---------- tabs ---------- */
+
+.tab-background {
+  border-radius: var(--wn-r) !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 1px solid transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.tabbrowser-tab .tab-label {
+  font-family: var(--wn-font) !important;
+  font-size: 11.5px !important;
+  color: var(--wn-muted) !important;
+}
+
+.tabbrowser-tab:hover:not([visuallyselected]) .tab-background {
+  background-color: var(--wn-hover) !important;
+  box-shadow: var(--split-sm) !important;
+}
+
+.tabbrowser-tab:hover .tab-label {
+  color: var(--wn-text) !important;
+}
+
+.tabbrowser-tab[visuallyselected] .tab-background {
+  background-color: var(--wn-panel) !important;
+  border-color: var(--wn-line-2) !important;
+  box-shadow: inset 0 2px 0 var(--wn-accent) !important;
+}
+
+.tabbrowser-tab[visuallyselected] .tab-label {
+  color: var(--wn-text) !important;
+}
+
+.tab-close-button {
+  border-radius: var(--wn-r) !important;
+  fill: var(--wn-muted) !important;
+}
+
+.tab-close-button:hover {
+  background-color: var(--wn-pink) !important;
+  fill: var(--wn-bg) !important;
+}
+
+.tab-context-line,
+.tab-loading-burst {
+  display: none !important;
+}
+
+.tab-throbber::before {
+  fill: var(--wn-accent) !important;
+}
+
+/* ---------- toolbar buttons ---------- */
+
+.toolbarbutton-1 > .toolbarbutton-icon,
+.toolbarbutton-1 > .toolbarbutton-badge-stack,
+.toolbarbutton-1 > .toolbarbutton-text,
+#tabs-newtab-button > .toolbarbutton-icon,
+#alltabs-button > .toolbarbutton-icon {
+  border-radius: var(--wn-r) !important;
+}
+
+toolbar .toolbarbutton-1:not([disabled]):hover > :is(.toolbarbutton-icon, .toolbarbutton-badge-stack),
+#tabs-newtab-button:hover > .toolbarbutton-icon {
+  background-color: var(--wn-hover) !important;
+  box-shadow: var(--split-sm) !important;
+  fill: var(--wn-text) !important;
+}
+
+toolbar .toolbarbutton-1:not([disabled]):is([open], [checked], :hover:active) > :is(.toolbarbutton-icon, .toolbarbutton-badge-stack) {
+  background-color: var(--wn-panel-2) !important;
+  fill: var(--wn-accent) !important;
+}
+
+toolbar .toolbarbutton-1[disabled] > .toolbarbutton-icon {
+  fill: var(--wn-dim) !important;
+  opacity: 1 !important;
+}
+
+/* window controls */
+.titlebar-button {
+  color: var(--wn-muted) !important;
+}
+
+.titlebar-button:hover {
+  background-color: var(--wn-hover) !important;
+  color: var(--wn-text) !important;
+}
+
+.titlebar-close:hover {
+  background-color: var(--wn-pink) !important;
+  color: var(--wn-bg) !important;
+}
+
+/* ---------- address bar ---------- */
+
+.urlbar-background {
+  border-radius: var(--wn-r) !important;
+  background-color: var(--wn-bg) !important;
+  border: 1px solid var(--wn-line) !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+#urlbar:hover:not([focused]) .urlbar-background {
+  border-color: var(--wn-line-2) !important;
+}
+
+#urlbar[focused] .urlbar-background,
+#urlbar[breakout-extend] .urlbar-background,
+#urlbar[open] .urlbar-background {
+  border-color: var(--wn-accent) !important;
+  box-shadow: var(--split) !important;
+}
+
+.urlbar-input-container,
+#urlbar .searchmode-switcher,
+#urlbar .urlbar-page-action,
+#identity-box .identity-box-button,
+#tracking-protection-icon-container,
+#urlbar-zoom-button {
+  border-radius: var(--wn-r) !important;
+}
+
+#urlbar-input,
+.urlbar-input {
+  font-family: var(--wn-font) !important;
+  font-size: 12.5px !important;
+  color: var(--wn-text) !important;
+}
+
+#urlbar-input::placeholder,
+.urlbar-input::placeholder {
+  color: var(--wn-dim) !important;
+  opacity: 1 !important;
+}
+
+#urlbar-input::selection,
+.urlbar-input::selection {
+  background-color: var(--wn-accent) !important;
+  color: var(--wn-on-accent) !important;
+}
+
+.urlbarView-row-inner,
+.urlbarView-row {
+  border-radius: var(--wn-r) !important;
+}
+
+.urlbarView-title {
+  color: var(--wn-text) !important;
+}
+
+.urlbarView-url,
+.urlbarView-action {
+  color: var(--wn-accent) !important;
+}
+
+.urlbarView-row[selected] .urlbarView-row-inner {
+  background-color: var(--wn-hover) !important;
+  box-shadow: inset 2px 0 0 var(--wn-accent) !important;
+}
+
+#urlbar-zoom-button {
+  background-color: var(--wn-panel-2) !important;
+  color: var(--wn-accent) !important;
+  font-family: var(--wn-font) !important;
+}
+
+/* ---------- menus and panels ---------- */
+
+menupopup,
+panel {
+  --panel-background: var(--wn-panel) !important;
+  --panel-color: var(--wn-text) !important;
+  --panel-border-color: var(--wn-line-2) !important;
+  --panel-border-radius: 3px !important;
+  --panel-shadow: 4px 0 0 var(--ch-a), -4px 0 0 var(--ch-b) !important;
+  --menuitem-border-radius: 3px !important;
+  --menuitem-hover-background-color: var(--wn-hover) !important;
+  --menu-background-color: var(--wn-panel) !important;
+  --menu-color: var(--wn-text) !important;
+  --menu-border-color: var(--wn-line-2) !important;
+  --menuitem-hover-background: var(--wn-hover) !important;
+  --panel-item-hover-bgcolor: var(--wn-hover) !important;
+  color-scheme: dark;
+}
+
+menupopup > menuitem,
+menupopup > menu {
+  border-radius: var(--wn-r) !important;
+}
+
+menupopup > :is(menuitem, menu):is([_moz-menuactive], :hover):not([disabled]) {
+  background-color: var(--wn-hover) !important;
+  color: var(--wn-text) !important;
+}
+
+menuseparator,
+toolbarseparator {
+  border-color: var(--wn-line) !important;
+  color: var(--wn-line) !important;
+}
+
+.subviewbutton,
+.panel-subview-footer-button {
+  border-radius: var(--wn-r) !important;
+}
+
+.subviewbutton:not([disabled]):hover {
+  background-color: var(--wn-hover) !important;
+  box-shadow: inset 2px 0 0 var(--wn-accent) !important;
+}
+
+/* status link preview, find bar */
+#statuspanel-label {
+  background-color: var(--wn-panel) !important;
+  color: var(--wn-accent) !important;
+  border: 1px solid var(--wn-line-2) !important;
+  border-radius: var(--wn-r) !important;
+  font-size: 11px !important;
+}
+
+findbar {
+  background-color: var(--wn-panel) !important;
+  color: var(--wn-text) !important;
+  border-top: 1px solid var(--wn-line) !important;
+}
+
+.findbar-textbox {
+  background-color: var(--wn-bg) !important;
+  border: 1px solid var(--wn-line) !important;
+  border-radius: var(--wn-r) !important;
+  color: var(--wn-text) !important;
+  font-family: var(--wn-font) !important;
+}
+
+.findbar-textbox:focus {
+  border-color: var(--wn-accent) !important;
+  box-shadow: var(--split-sm) !important;
+  outline: none !important;
+}
+
+:focus-visible {
+  outline-color: var(--wn-accent) !important;
+}
+
+/* ---------- the fault: channel slip on events ---------- */
+
+@keyframes cut-a {
+  0%   { clip-path: inset(6% 0 80% 0);  transform: translate(-7px, 0); }
+  25%  { clip-path: inset(44% 0 40% 0); transform: translate(6px, 0); }
+  50%  { clip-path: inset(72% 0 10% 0); transform: translate(-5px, 0); }
+  75%  { clip-path: inset(24% 0 60% 0); transform: translate(8px, 0); }
+  100% { clip-path: inset(0 0 100% 0);  transform: none; }
+}
+
+@keyframes box-tear {
+  0%   { box-shadow: 6px 0 0 var(--ch-a), -6px 0 0 var(--ch-b); transform: translate(-3px, 0); }
+  25%  { box-shadow: -5px 0 0 var(--ch-a), 5px 0 0 var(--ch-b); transform: translate(4px, 0); clip-path: inset(0 0 55% 0); }
+  50%  { box-shadow: 7px 0 0 var(--ch-a), -7px 0 0 var(--ch-b); transform: translate(-2px, 0); clip-path: inset(40% 0 0 0); }
+  75%  { box-shadow: -4px 0 0 var(--ch-a), 4px 0 0 var(--ch-b); transform: translate(2px, 0); }
+  100% { transform: none; clip-path: none; }
+}
+
+@keyframes nudge {
+  0%   { transform: translateX(-3px); filter: drop-shadow(-3px 0 var(--ch-a)) drop-shadow(3px 0 var(--ch-b)); }
+  34%  { transform: translateX(3px);  filter: drop-shadow(3px 0 var(--ch-a)) drop-shadow(-3px 0 var(--ch-b)); }
+  67%  { transform: translateX(-2px); filter: drop-shadow(-2px 0 var(--ch-a)) drop-shadow(2px 0 var(--ch-b)); }
+  100% { transform: none; filter: none; }
+}
+
+/* text slip: the label's two channels jump apart for a moment */
+@keyframes text-slip {
+  0%   { text-shadow: 5px 0 var(--ch-a), -5px 0 var(--ch-b); transform: translate(-2px, 0); }
+  25%  { text-shadow: -4px 0 var(--ch-a), 4px 0 var(--ch-b); transform: translate(2px, 0); }
+  50%  { text-shadow: 3px 0 var(--ch-a), -3px 0 var(--ch-b); transform: translate(-1px, 0); }
+  75%  { text-shadow: -2px 0 var(--ch-a), 2px 0 var(--ch-b); transform: none; }
+  100% { text-shadow: none; transform: none; }
+}
+
+/* the same tear as cut-a, placed at the start of a long cycle so it repeats every 9s */
+@keyframes cut-a-cycle {
+  0%     { opacity: 1; clip-path: inset(6% 0 80% 0);  transform: translate(-7px, 0); }
+  0.95%  { opacity: 1; clip-path: inset(44% 0 40% 0); transform: translate(6px, 0); }
+  1.9%   { opacity: 1; clip-path: inset(72% 0 10% 0); transform: translate(-5px, 0); }
+  2.85%  { opacity: 1; clip-path: inset(24% 0 60% 0); transform: translate(8px, 0); }
+  3.8%, 100% { opacity: 0; clip-path: inset(0 0 100% 0); transform: none; }
+}
+
+@keyframes word-cycle {
+  0%     { text-shadow: 6px 0 var(--ch-a), -6px 0 var(--ch-b); transform: translate(-2px, 0); }
+  0.95%  { text-shadow: -5px 0 var(--ch-a), 5px 0 var(--ch-b); transform: translate(2px, 0); }
+  1.9%   { text-shadow: 4px 0 var(--ch-a), -4px 0 var(--ch-b); transform: translate(-1px, 0); }
+  2.85%  { text-shadow: -3px 0 var(--ch-a), 3px 0 var(--ch-b); transform: none; }
+  3.8%, 100% { text-shadow: 1px 0 var(--ch-a), -1px 0 var(--ch-b); transform: none; }
+}
+
+@keyframes busy-slip {
+  0%, 100% { text-shadow: 1px 0 var(--ch-a), -1px 0 var(--ch-b); }
+  50%      { text-shadow: -2px 0 var(--ch-a), 2px 0 var(--ch-b); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Settings switches (Soot's EFFECTS page): app\boot.sys.mjs puts soot-fx and soot-fx-extra on the
+     window root while they are on. Both default to on. */
+
+  /* wordmark: tears 450 ms after the window opens, then every 9 s */
+  :root[soot-fx] #nav-bar > .titlebar-spacer[type="pre-tabs"]::before { animation: word-cycle 9s steps(1) 0.45s infinite; }
+  :root[soot-fx] #nav-bar > .titlebar-spacer[type="pre-tabs"]::after  { animation: cut-a-cycle 9s steps(1) 0.45s infinite; }
+  :root[soot-fx] #nav-bar > .titlebar-spacer[type="pre-tabs"]:hover::before { animation: nudge 0.3s steps(1) 1; }
+
+  /* switching to a tab tears it once */
+  :root[soot-fx] .tabbrowser-tab[visuallyselected] .tab-background { animation: box-tear 0.34s steps(1) 1; }
+  :root[soot-fx] .tabbrowser-tab[visuallyselected] .tab-label { animation: text-slip 0.34s steps(1) 1; }
+
+  /* extra effects: the heavier ones, switch them off for speed */
+
+  /* a loading tab keeps slipping until the page is in */
+  :root[soot-fx-extra] .tabbrowser-tab[busy] .tab-label { animation: busy-slip 0.9s steps(1) infinite; }
+
+  /* focusing the address bar tears it once */
+  :root[soot-fx-extra] #urlbar[focused] .urlbar-background { animation: box-tear 0.34s steps(1) 1 !important; }
+
+  /* icons nudge on hover */
+  :root[soot-fx-extra] toolbar .toolbarbutton-1:not([disabled]):hover > .toolbarbutton-icon { animation: nudge 0.3s steps(1) 1; }
+
+  /* opening a menu tears it once */
+  :root[soot-fx-extra] :is(menupopup[panelopen="true"], panel[panelopen="true"]) { animation: text-slip 0.34s steps(1) 1; }
+}
+
+/* ---------- Soot's own toolbar buttons: labelled chips, easy to find ---------- */
+
+:is(#soot-vault-button, #soot-clear-button) > .toolbarbutton-icon {
+  display: none !important;
+}
+
+#nav-bar :is(#soot-vault-button, #soot-clear-button) > .toolbarbutton-text {
+  display: block !important;
+  min-width: 0 !important;
+  margin: 0 2px !important;
+  padding: 6px 9px !important;
+  font: 700 10.5px/1 var(--wn-font) !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--wn-muted) !important;
+  background-color: var(--wn-bg) !important;
+  border: 1px solid var(--wn-line) !important;
+  border-radius: var(--wn-r) !important;
+}
+
+#nav-bar :is(#soot-vault-button, #soot-clear-button):hover > .toolbarbutton-text {
+  color: var(--wn-text) !important;
+  background-color: var(--wn-hover) !important;
+  border-color: var(--wn-line-2) !important;
+  box-shadow: var(--split-sm) !important;
+}
+
+/* ---------- layout: address bar and window buttons on top, tabs in a strip underneath ---------- */
+
+#navigator-toolbox > #toolbar-menubar { order: 0; }
+#navigator-toolbox > #nav-bar { order: 1; }
+#navigator-toolbox > #TabsToolbar { order: 2; }
+#navigator-toolbox > #PersonalToolbar { order: 3; }
+#navigator-toolbox > #notifications-toolbar { order: 4; }
+
+#nav-bar {
+  -moz-window-dragging: drag;
+  border-top: 0 !important;
+  background-color: var(--wn-bg) !important;
+}
+
+#TabsToolbar {
+  background-color: var(--wn-panel) !important;
+  border-top: 1px solid var(--wn-line) !important;
+}
+
+/* window buttons live in the top row now */
+#TabsToolbar > .titlebar-buttonbox-container,
+#TabsToolbar > .titlebar-spacer {
+  display: none !important;
+}
+
+#nav-bar > .titlebar-buttonbox-container {
+  display: flex !important;
+}
+
+#TabsToolbar .tabbrowser-tab[visuallyselected] .tab-background {
+  background-color: var(--wn-bg) !important;
+}
+
+/* ---------- no account or sync promos in the menus ---------- */
+
+#appMenu-menu-message,
+#PanelUI-fxa-menu-message,
+#appMenu-fxa-status2,
+#appMenu-fxa-separator,
+#appMenu-fxa-label2 {
+  display: none !important;
+}

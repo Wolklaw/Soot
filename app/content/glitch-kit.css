@@ -1,0 +1,54 @@
+/* wolklaw glitch kit: copy into every new UI (inline or as a file). Needs --ch-a #ff2e88 and --ch-b #22d8ff. */
+
+/* 1. Text: always-on 2px channel offset, plus a clipped tear on each burst */
+.glitch { position: relative; text-shadow: 2px 0 var(--ch-a), -2px 0 var(--ch-b); }
+.glitch::before, .glitch::after {
+  content: attr(data-text); position: absolute; inset: 0; opacity: 0; pointer-events: none;
+  text-shadow: none; mix-blend-mode: screen;
+}
+.glitch::before { color: var(--ch-a); }
+.glitch::after { color: var(--ch-b); }
+.glitch.is-burst::before { opacity: 1; animation: cut-a 0.34s steps(1) 1; }
+.glitch.is-burst::after  { opacity: 1; animation: cut-b 0.34s steps(1) 1; }
+@keyframes cut-a {
+  0%   { clip-path: inset(6% 0 80% 0);  transform: translate(-7px, 0); }
+  25%  { clip-path: inset(44% 0 40% 0); transform: translate(6px, 0); }
+  50%  { clip-path: inset(72% 0 10% 0); transform: translate(-5px, 0); }
+  75%  { clip-path: inset(24% 0 60% 0); transform: translate(8px, 0); }
+  100% { clip-path: inset(0 0 100% 0);  transform: none; }
+}
+@keyframes cut-b {
+  0%   { clip-path: inset(62% 0 22% 0); transform: translate(7px, 0); }
+  25%  { clip-path: inset(10% 0 74% 0); transform: translate(-6px, 0); }
+  50%  { clip-path: inset(36% 0 48% 0); transform: translate(5px, 0); }
+  75%  { clip-path: inset(80% 0 6% 0);  transform: translate(-8px, 0); }
+  100% { clip-path: inset(0 0 100% 0);  transform: none; }
+}
+
+/* 2. Boxes (panels, screens, cards, images): channel split + jitter on each burst */
+.glitch-box.is-burst { animation: box-tear 0.34s steps(1) 1; }
+@keyframes box-tear {
+  0%   { box-shadow: 6px 0 0 var(--ch-a), -6px 0 0 var(--ch-b); transform: translate(-3px, 0); }
+  25%  { box-shadow: -5px 0 0 var(--ch-a), 5px 0 0 var(--ch-b); transform: translate(4px, 0); clip-path: inset(0 0 55% 0); }
+  50%  { box-shadow: 7px 0 0 var(--ch-a), -7px 0 0 var(--ch-b); transform: translate(-2px, 0); clip-path: inset(40% 0 0 0); }
+  75%  { box-shadow: -4px 0 0 var(--ch-a), 4px 0 0 var(--ch-b); transform: translate(2px, 0); }
+  100% { box-shadow: none; transform: none; clip-path: none; }
+}
+
+/* 3. Hover/focus on anything interactive: the split */
+:root { --split: 4px 0 0 var(--ch-a), -4px 0 0 var(--ch-b); }
+button:hover, .btn:hover, .card:hover, a.card:hover { box-shadow: var(--split); }
+
+/* 4. Logo / mark nudge on hover */
+.logo:hover svg, .mark:hover { animation: nudge 0.3s steps(1) 1; }
+@keyframes nudge {
+  0%   { transform: translateX(-3px); filter: drop-shadow(-3px 0 var(--ch-a)) drop-shadow(3px 0 var(--ch-b)); }
+  34%  { transform: translateX(3px);  filter: drop-shadow(3px 0 var(--ch-a)) drop-shadow(-3px 0 var(--ch-b)); }
+  67%  { transform: translateX(-2px); filter: drop-shadow(-2px 0 var(--ch-a)) drop-shadow(2px 0 var(--ch-b)); }
+  100% { transform: none; filter: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glitch::before, .glitch::after { display: none; }
+  *, *::before, *::after { animation: none !important; }
+}

@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Soot</title>
+<link rel="icon" href="chrome://soot/content/brand/icon32.png">
+<link rel="stylesheet" href="chrome://soot/content/glitch-kit.css">
+<link rel="stylesheet" href="chrome://soot/content/hub.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow"><b id="dot">&#9679;</b> <span id="eyebrow">SOOT</span></div>
+  <h1 class="glitch" id="title">VAULT</h1>
+  <nav class="tabs">
+    <button data-go="vault">VAULT</button>
+    <button data-go="data">CLEAR &amp; IMPORT</button>
+    <button data-go="effects">EFFECTS</button>
+  </nav>
+
+  <main class="glitch-box" id="panel">
+
+    <!-- ===== vault ===== -->
+    <section id="vault" hidden>
+      <!-- the vault opens only with its password; the first visit makes you choose one -->
+      <form class="editor" id="gate" hidden>
+        <div class="k" id="gate-title">VAULT LOCKED</div>
+        <div id="gate-text"></div>
+        <label><span id="gate-pw-label">VAULT PASSWORD</span><input id="gate-pw" type="password" autocomplete="off" required></label>
+        <label id="gate-pw2-row" hidden>REPEAT IT<input id="gate-pw2" type="password" autocomplete="off"></label>
+        <label>KEEP THE VAULT UNLOCKED FOR<select id="gate-remember">
+          <option value="0">This visit only. Ask every time</option>
+          <option value="15">15 minutes</option>
+          <option value="60">1 hour</option>
+          <option value="240">4 hours</option>
+          <option value="-1">Until I close Soot</option>
+        </select></label>
+        <div class="result bad" id="gate-out"></div>
+        <div class="row"><button class="btn primary" type="submit" id="gate-go">UNLOCK</button></div>
+        <p class="note" id="gate-note">The password is never stored. Closing Soot always locks the vault, whatever you pick here.</p>
+      </form>
+      <div id="vault-body" hidden>
+      <div class="row lockrow">
+        <span class="chip" id="lock-state"></span>
+        <button class="btn small" id="lock-set">CHANGE VAULT PASSWORD</button>
+        <button class="btn small" id="lock-now" hidden>LOCK NOW</button>
+      </div>
+      <form class="editor" id="lock-form" hidden>
+        <label id="l-old-row">CURRENT VAULT PASSWORD<input id="l-old" type="password"></label>
+        <label>NEW VAULT PASSWORD (12 CHARACTERS OR MORE)<input id="l-new" type="password" required></label>
+        <label>REPEAT IT<input id="l-again" type="password" required></label>
+        <div class="result bad" id="lock-out"></div>
+        <div class="row">
+          <button class="btn primary" type="submit">SAVE VAULT PASSWORD</button>
+          <button class="btn" type="button" id="lock-cancel">CANCEL</button>
+        </div>
+        <p class="note">There is no way to recover this password. If you forget it, the vault cannot be opened.</p>
+      </form>
+      <div class="facts" id="health"></div>
+      <div class="subtabs">
+        <button data-sub="logins">LOGINS</button>
+        <button data-sub="notes">NOTES</button>
+        <button data-sub="codes">SIGN-IN CODES</button>
+        <button data-sub="generator">GENERATOR</button>
+        <button data-sub="cards">CARDS &amp; ADDRESSES</button>
+        <button data-sub="share">SHARE</button>
+        <button data-sub="phone">PHONE</button>
+      </div>
+
+      <div id="sub-logins">
+        <div class="bar">
+          <input id="search" type="text" placeholder="Search logins" spellcheck="false">
+          <button class="btn primary" id="add-login">ADD LOGIN</button>
+          <button class="btn" id="check-breaches">CHECK BREACHES</button>
+          <button class="btn" id="import-csv">IMPORT FROM DASHLANE</button>
+          <button class="btn" id="export-csv">EXPORT FOR DASHLANE</button>
+        </div>
+        <form class="editor" id="login-form" hidden>
+          <label>SITE<input id="f-site" type="text" placeholder="example.com" spellcheck="false" required></label>
+          <label>USERNAME<input id="f-user" type="text" spellcheck="false"></label>
+          <label>PASSWORD<input id="f-pass" type="text" spellcheck="false" required></label>
+          <div class="row">
+            <button class="btn" type="button" id="f-generate">GENERATE</button>
+            <button class="btn primary" type="submit">SAVE</button>
+            <button class="btn" type="button" id="f-cancel">CANCEL</button>
+          </div>
+        </form>
+        <div id="logins" class="list"></div>
+        <p class="note">Logins are saved as you sign in to sites and filled in for you next time. Everything in the vault is encrypted with AES-256 and never leaves this PC.
+          Import takes the .zip or credentials.csv that Dashlane exports (logins, notes and two-step codes), and also CSV files from Chrome, Edge, Bitwarden and others.
+          Export writes a CSV in Dashlane's own layout. An export file is not encrypted: delete it once it is imported.
+          Breach checks send only the first five characters of each password's hash to haveibeenpwned.com. SITE BREACHED means the site itself reported a leak since you last changed that password.
+          For logins on your phone, <a href="about:preferences#sync">turn on sync</a>. To scan your email addresses for leaks, use <a href="https://monitor.mozilla.org/">Mozilla Monitor</a>, which is free.</p>
+      </div>
+
+      <div id="sub-notes" hidden>
+        <form class="editor" id="note-form">
+          <label>TITLE<input id="n-title" type="text" required></label>
+          <label>NOTE<textarea id="n-body" rows="4" spellcheck="false" required></textarea></label>
+          <div class="row"><button class="btn primary" type="submit">SAVE NOTE</button></div>
+        </form>
+        <div id="notes" class="list"></div>
+        <p class="note">For licence keys, recovery codes, Wi-Fi passwords. Stored encrypted with the same key as your logins.</p>
+      </div>
+
+      <div id="sub-codes" hidden>
+        <form class="editor" id="code-form">
+          <label>NAME<input id="c-name" type="text" placeholder="GitHub" required></label>
+          <label>SETUP KEY<input id="c-secret" type="text" placeholder="the key or otpauth:// link a site shows when you turn on two-step sign-in" spellcheck="false" required></label>
+          <div class="row"><button class="btn primary" type="submit">ADD CODE</button></div>
+        </form>
+        <div id="codes" class="list"></div>
+        <p class="note">Six-digit two-step codes, the same kind an authenticator app gives you. Keep the site's backup codes somewhere else too.</p>
+      </div>
+
+      <div id="sub-generator" hidden>
+        <div class="editor">
+          <div class="generated" id="g-out"></div>
+          <label>LENGTH <span id="g-len-v">20</span><input id="g-len" type="range" min="8" max="64" value="20"></label>
+          <div class="row checks">
+            <label><input type="checkbox" id="g-upper" checked> A-Z</label>
+            <label><input type="checkbox" id="g-lower" checked> a-z</label>
+            <label><input type="checkbox" id="g-digits" checked> 0-9</label>
+            <label><input type="checkbox" id="g-symbols" checked> !#$%</label>
+          </div>
+          <div class="row">
+            <button class="btn primary" id="g-new">NEW PASSWORD</button>
+            <button class="btn" id="g-copy">COPY</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="sub-phone" hidden>
+        <div class="editor">
+          <div>The Soot app for Android keeps a copy of this vault on your phone and fills logins into apps and websites there.
+            It syncs straight from this PC, encrypted end to end with a key only this PC and the phone hold. No Soot server is involved.
+            At home it uses your Wi-Fi. Away from home it works through Tailscale (free): install it on this PC and the phone, sign in to the same account, then type the 100.x address shown below.</div>
+          <div class="row"><button class="btn primary" id="ph-toggle">TURN ON PHONE SYNC</button></div>
+        </div>
+        <div class="facts" id="ph-status"></div>
+        <div id="ph-devices" class="list"></div>
+        <p class="note">To pair: install Soot on the phone, open it, and type the address shown above. Both screens then show a six-digit code. If they match, press THE CODES MATCH here.
+          The phone syncs whenever you open the app while this PC is on and Soot is running, at home or through Tailscale. The first time, Windows asks Soot for one firewall opening, limited to your home network and Tailscale addresses.
+          If you turned sync on before this version, turn it off and on once to refresh that opening.</p>
+      </div>
+      <div id="sub-cards" hidden>
+        <div class="editor">
+          <div>Soot fills saved payment cards and addresses into checkout and sign-up forms, and offers to save new ones as you type them. Card numbers are encrypted with the vault key.</div>
+          <div class="row">
+            <button class="btn primary" id="open-cards">MANAGE CARDS AND ADDRESSES</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="sub-share" hidden>
+        <form class="editor" id="share-form">
+          <label>LOGIN TO SHARE<select id="sh-login"></select></label>
+          <label>ONE-TIME PASSPHRASE (TELL THEM THIS A DIFFERENT WAY, E.G. BY PHONE)<input id="sh-pass" type="text" spellcheck="false" required></label>
+          <div class="row"><button class="btn primary" type="submit">MAKE ENCRYPTED SHARE TEXT</button><button class="btn" type="button" id="sh-copy" hidden>COPY</button></div>
+          <textarea id="sh-out" rows="3" readonly hidden></textarea>
+        </form>
+        <h2>RECEIVE A SHARED LOGIN</h2>
+        <form class="editor" id="receive-form">
+          <label>SHARE TEXT<textarea id="rc-text" rows="3" spellcheck="false" required></textarea></label>
+          <label>PASSPHRASE<input id="rc-pass" type="text" spellcheck="false" required></label>
+          <div class="row"><button class="btn primary" type="submit">ADD TO MY VAULT</button></div>
+          <div class="result" id="rc-out"></div>
+        </form>
+        <p class="note">The share text is the login encrypted with AES-256 under the passphrase. Send the text by any channel; without the passphrase it is useless. The other person needs Soot to open it.</p>
+      </div>
+      </div>
+    </section>
+
+    <!-- ===== clear & import ===== -->
+    <section id="data" hidden>
+      <h2>CLEAR</h2>
+      <div class="row">
+        <button class="btn primary big" id="clear-now">CLEAR CACHE AND COOKIES</button>
+        <button class="btn" id="clear-more">CHOOSE WHAT TO CLEAR</button>
+      </div>
+      <p class="note">Clearing cookies signs you out of websites. Saved logins, favourites and history stay.</p>
+      <div class="result" id="clear-out"></div>
+      <h2>IMPORT</h2>
+      <div class="row">
+        <button class="btn primary" id="import-browser">FROM ANOTHER BROWSER</button>
+        <button class="btn" id="import-html">FAVOURITES FROM A FILE</button>
+        <button class="btn" id="export-html">EXPORT FAVOURITES</button>
+      </div>
+      <p class="note">From another browser brings over favourites, saved passwords and history from Chrome, Edge, Firefox and others installed on this PC.
+        A favourites file is the .html file any browser can export.</p>
+      <div class="result" id="import-out"></div>
+    </section>
+
+    <!-- ===== effects ===== -->
+    <section id="effects" hidden>
+      <h2>VISUAL EFFECTS</h2>
+      <div class="editor">
+        <div class="checks">
+          <label><input type="checkbox" id="fx-ui"> Glitch effects: the wordmark and switching tabs</label>
+          <label><input type="checkbox" id="fx-extra"> Extra effects: loading tabs, address bar, toolbar hover, menus</label>
+          <label><input type="checkbox" id="fx-pages"> Soot pages: the tear when you open or change a section here</label>
+        </div>
+      </div>
+      <p class="note">All on by default. Browser effects apply at once. Turn the extra ones off if the browser feels heavy on a slow PC.
+        The new tab page effect follows your Windows "Show animations" setting.</p>
+    </section>
+
+  </main>
+</div>
+<script src="chrome://soot/content/hub.js"></script>
+<script src="chrome://soot/content/glitch-kit.js"></script>
+</body>
+</html>

@@ -1,0 +1,216 @@
+/* Soot: new tab page and built-in pages in the house style. */
+
+@-moz-document url("about:newtab"), url("about:home"), url("about:privatebrowsing") {
+  :root {
+    --wn-bg: #04090b;
+    --wn-panel: #0a1517;
+    --wn-line: #143a3d;
+    --wn-line-2: #1f6a66;
+    --wn-text: #d4f1ec;
+    --wn-muted: #6f9f98;
+    --wn-dim: #3b6460;
+    --wn-accent: #3de8c8;
+    --ch-a: #ff2e88;
+    --ch-b: #22d8ff;
+    --wn-font: "Cascadia Mono", "Cascadia Code", Consolas, monospace;
+    --newtab-background-color: #04090b !important;
+    --newtab-background-color-secondary: #0a1517 !important;
+    --newtab-text-primary-color: #d4f1ec !important;
+    --newtab-primary-action-background: #3de8c8 !important;
+    --color-accent-primary: #3de8c8 !important;
+    --button-background-color-primary: #3de8c8 !important;
+    --button-background-color-primary-hover: #74f2da !important;
+    --button-text-color-primary: #02130f !important;
+    --border-radius-small: 3px !important;
+    --border-radius-medium: 3px !important;
+    --border-radius-large: 3px !important;
+    --border-radius-circle: 3px !important;
+  }
+
+  html, body, .nova-outer-wrapper, .outer-wrapper {
+    background: var(--wn-bg) !important;
+    color: var(--wn-text) !important;
+    font-family: var(--wn-font) !important;
+  }
+
+  /* the engine's logo and name make way for the Soot heading */
+  .logo-and-wordmark-wrapper {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    margin: 18vh auto 0 !important;
+    padding: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    max-width: none !important;
+  }
+
+  .logo-and-wordmark-wrapper::before {
+    content: "\25CF  READY   \00B7   ADS BLOCKED   \00B7   TELEMETRY OFF";
+    font: 700 11px/1 var(--wn-font);
+    letter-spacing: 0.08em;
+    color: var(--wn-muted);
+    white-space: pre;
+    margin-bottom: 22px;
+  }
+
+  .logo-and-wordmark-wrapper::after {
+    content: "Type in the address bar to search or open a site.\A VAULT and CLEAR are in the toolbar  \00B7  Ctrl+T new tab  \00B7  Ctrl+Shift+P private window";
+    font: 400 13px/1.9 var(--wn-font);
+    color: var(--wn-dim);
+    white-space: pre;
+    text-align: center;
+    margin-top: 26px;
+  }
+
+  .logo-and-wordmark {
+    display: block !important;
+    position: relative !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: none !important;
+  }
+
+  .logo-and-wordmark .logo,
+  .logo-and-wordmark .wordmark {
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    background: none !important;
+    fill: none !important;
+  }
+
+  .logo-and-wordmark .logo {
+    position: absolute !important;
+    inset: 0;
+  }
+
+  .logo-and-wordmark .wordmark::before,
+  .logo-and-wordmark .logo::before,
+  .logo-and-wordmark .logo::after {
+    content: "SOOT";
+    font: 700 76px/1.05 var(--wn-font);
+    letter-spacing: 0.02em;
+    white-space: pre;
+  }
+
+  /* 1. Text: always-on 2px channel offset, plus a clipped tear on each burst */
+  .logo-and-wordmark .wordmark::before {
+    display: block;
+    color: var(--wn-text);
+    text-shadow: 2px 0 var(--ch-a), -2px 0 var(--ch-b);
+  }
+
+  .logo-and-wordmark .logo::before,
+  .logo-and-wordmark .logo::after {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    mix-blend-mode: screen;
+  }
+
+  .logo-and-wordmark .logo::before { color: var(--ch-a); }
+  .logo-and-wordmark .logo::after { color: var(--ch-b); }
+
+  /* cut-a / cut-b from the glitch kit, placed at the start of a 9 s cycle:
+     first tear 450 ms after load, then one every 9 s */
+  @keyframes cut-a-cycle {
+    0%     { opacity: 1; clip-path: inset(6% 0 80% 0);  transform: translate(-7px, 0); }
+    0.95%  { opacity: 1; clip-path: inset(44% 0 40% 0); transform: translate(6px, 0); }
+    1.9%   { opacity: 1; clip-path: inset(72% 0 10% 0); transform: translate(-5px, 0); }
+    2.85%  { opacity: 1; clip-path: inset(24% 0 60% 0); transform: translate(8px, 0); }
+    3.8%, 100% { opacity: 0; clip-path: inset(0 0 100% 0); transform: none; }
+  }
+
+  @keyframes cut-b-cycle {
+    0%     { opacity: 1; clip-path: inset(62% 0 22% 0); transform: translate(7px, 0); }
+    0.95%  { opacity: 1; clip-path: inset(10% 0 74% 0); transform: translate(-6px, 0); }
+    1.9%   { opacity: 1; clip-path: inset(36% 0 48% 0); transform: translate(5px, 0); }
+    2.85%  { opacity: 1; clip-path: inset(80% 0 6% 0);  transform: translate(-8px, 0); }
+    3.8%, 100% { opacity: 0; clip-path: inset(0 0 100% 0); transform: none; }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .logo-and-wordmark .logo::before { animation: cut-a-cycle 9s steps(1) 0.45s infinite; }
+    .logo-and-wordmark .logo::after  { animation: cut-b-cycle 9s steps(1) 0.45s infinite; }
+  }
+
+  /* the customise button: sharp corners like every other control */
+  moz-button.open-customization-button {
+    --button-border-radius: 3px !important;
+    --border-radius-circle: 3px !important;
+    border-radius: 3px !important;
+  }
+
+  moz-button.open-customization-button::part(button) {
+    border-radius: 3px !important;
+  }
+
+  moz-button.open-customization-button:hover::part(button) {
+    box-shadow: 4px 0 0 var(--ch-a), -4px 0 0 var(--ch-b) !important;
+  }
+
+  .search-wrapper:empty,
+  .search-wrapper:has(.search-inner-wrapper:empty) {
+    display: none !important;
+  }
+}
+
+/* blank pages stay dark instead of flashing white */
+@-moz-document url("about:blank") {
+  html:empty, html > body:empty {
+    background-color: #04090b !important;
+  }
+}
+
+/* settings and the other built-in pages: same palette, sharp corners, no purple */
+@-moz-document url-prefix("about:"), url-prefix("chrome://browser/content/"), url-prefix("chrome://global/content/") {
+  :root {
+    --color-accent-primary: #3de8c8 !important;
+    --color-accent-primary-hover: #74f2da !important;
+    --color-accent-primary-active: #2bc4a8 !important;
+    --button-background-color-primary: #3de8c8 !important;
+    --button-background-color-primary-hover: #74f2da !important;
+    --button-background-color-primary-active: #2bc4a8 !important;
+    --button-text-color-primary: #02130f !important;
+    --button-text-color-primary-hover: #02130f !important;
+    --link-color: #3de8c8 !important;
+    --link-color-hover: #74f2da !important;
+    --focus-outline-color: #3de8c8 !important;
+    --background-color-canvas: #04090b !important;
+    --background-color-box: #0a1517 !important;
+    --in-content-page-background: #04090b !important;
+    --in-content-box-background: #0a1517 !important;
+    --in-content-box-info-background: #0e1f22 !important;
+    --in-content-border-color: #143a3d !important;
+    --in-content-primary-button-background: #3de8c8 !important;
+    --in-content-primary-button-background-hover: #74f2da !important;
+    --in-content-primary-button-text-color: #02130f !important;
+    --in-content-accent-color: #3de8c8 !important;
+    --border-color: #143a3d !important;
+    --border-radius-small: 3px !important;
+    --border-radius-medium: 3px !important;
+    --border-radius-large: 3px !important;
+    --border-radius-xlarge: 3px !important;
+  }
+}
+
+/* built-in pages: square buttons, fields and side menus */
+@-moz-document url-prefix("about:") {
+  :root {
+    --button-border-radius: 3px !important;
+    --input-border-radius: 3px !important;
+    --border-radius-circle: 3px !important;
+    --border-radius-xsmall: 3px !important;
+    --box-border-radius: 3px !important;
+    --panel-border-radius: 3px !important;
+  }
+  .category, .category-button, button.category, #categories > .category, .search-container input, search-textbox, input[type="search"], moz-input-search {
+    border-radius: 3px !important;
+  }
+}
