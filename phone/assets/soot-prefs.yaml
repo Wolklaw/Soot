@@ -1,0 +1,46 @@
+# Soot's engine defaults on Android: the entries of config/user.js that mean something to GeckoView.
+# Read at every start, before the first page loads. Tracking protection, cookies, query stripping,
+# bounce tracking and Global Privacy Control are set in Engine.java through GeckoView's own settings.
+prefs:
+  # nothing sent to Mozilla
+  datareporting.healthreport.uploadEnabled: false
+  datareporting.usage.uploadEnabled: false
+  datareporting.policy.dataSubmissionEnabled: false
+  toolkit.telemetry.unified: false
+  toolkit.telemetry.enabled: false
+  toolkit.telemetry.archive.enabled: false
+  toolkit.telemetry.server: "data:,"
+  toolkit.telemetry.coverage.opt-out: true
+  toolkit.coverage.opt-out: true
+  app.shield.optoutstudies.enabled: false
+  app.normandy.enabled: false
+  app.normandy.api_url: ""
+  breakpad.reportURL: ""
+  network.captive-portal-service.enabled: false
+  network.connectivity-service.enabled: false
+  messaging-system.rsexperimentloader.enabled: false
+  extensions.getAddons.cache.enabled: false
+  # AI features off
+  browser.ml.enable: false
+  browser.ml.chat.enabled: false
+  extensions.ml.enabled: false
+  # privacy
+  privacy.trackingprotection.emailtracking.enabled: true
+  privacy.fingerprintingProtection: true
+  privacy.fingerprintingProtection.pbmode: true
+  privacy.query_stripping.strip_on_share.enabled: true
+  network.http.referer.XOriginTrimmingPolicy: 2
+  dom.private-attribution.submission.enabled: false
+  beacon.enabled: false
+  browser.send_pings: false
+  network.prefetch-next: false
+  network.predictor.enable-prefetch: false
+  media.peerconnection.ice.default_address_only: true
+  media.peerconnection.ice.proxy_only_if_behind_proxy: true
+  network.IDN_show_punycode: true
+  browser.search.suggest.enabled: false
+  # decline cookie banners automatically where possible
+  cookiebanners.service.mode: 1
+  cookiebanners.service.mode.privateBrowsing: 1
+  # blank pages stay dark until a site paints
+  browser.display.background_color.dark: "#04090b"

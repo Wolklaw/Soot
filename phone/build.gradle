@@ -1,0 +1,56 @@
+// Soot for Android. Run phone\build.ps1 rather than Gradle directly: it sets the signing key and names the APK.
+plugins { id 'com.android.application' version '9.5.1' }
+
+// One engine build per processor type, about 95 MB each. arm64-v8a is every current phone; x86_64 is the emulator.
+def abi = providers.gradleProperty('abi').getOrElse('arm64-v8a')
+def secure = providers.gradleProperty('secure').getOrElse('true')
+def geckoview = '160.0.20261116130455'
+
+android {
+    namespace = 'dev.wolklaw.soot'
+    compileSdk { version = release(37) { minorApiLevel = 2 } }     // GeckoView 160 is built against Android API 37.2
+    defaultConfig {
+        applicationId = 'dev.wolklaw.soot'
+        minSdk = 30
+        targetSdk = 36
+        versionCode = 2
+        versionName = '0.2'
+        ndk { abiFilters abi }
+        buildConfigField 'boolean', 'SECURE', secure          // false only in the screenshots-allowed test build
+        buildConfigField 'String', 'ENGINE', "\"${geckoview.tokenize('.')[0]}\""
+    }
+    buildFeatures { buildConfig = true }
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = ['src']
+            res.srcDirs = ['res']
+            assets.srcDirs = ['assets']
+        }
+    }
+    signingConfigs {
+        soot {
+            storeFile = file('soot.keystore')
+            storePassword = System.getenv('SOOT_KEYSTORE_PASSWORD')
+            keyAlias = 'soot'
+            keyPassword = System.getenv('SOOT_KEYSTORE_PASSWORD')
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled = false
+            signingConfig = signingConfigs.soot
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    lint { checkReleaseBuilds = false }
+    // keep the engine compressed inside the APK: about 95 MB to copy to the phone instead of 215 MB
+    packaging { jniLibs { useLegacyPackaging = true } }
+}
+
+dependencies {
+    implementation "org.mozilla.geckoview:geckoview-${abi}:${geckoview}"
+}

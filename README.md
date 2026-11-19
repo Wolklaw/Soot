@@ -144,24 +144,60 @@ There is no recovery. If you forget the vault password, the vault cannot be open
 
 ### Phone
 
-`phone\Soot.apk` (also on the release page) is a small Android app. It keeps an encrypted copy of the vault
-on your phone, shows logins, notes and sign-in codes, and fills logins into apps and browsers.
+Soot for Android is a browser too, built on GeckoView, the same Gecko engine packaged by Mozilla for
+Android, and it carries the vault. It is a first version: read the list of what is missing before you
+rely on it.
+
+<p align="center">
+  <img src="docs/phone-home.png" alt="Soot on Android: the start screen with uBlock Origin on, tracking protection strict and telemetry off" width="250">
+  <img src="docs/phone-blocked.png" alt="Soot on Android scoring 100 out of 100 on an ad blocker test page" width="250">
+  <img src="docs/phone-vault.png" alt="The vault on the phone after pairing, with invented logins" width="250">
+</p>
+
+What works:
+
+- Address bar (an address, or a search sent to Google like on the PC), tabs, back, forward, reload and stop.
+- Private tabs: nothing from them is kept once they are closed, and they stay out of screenshots and the
+  recents list.
+- uBlock Origin, downloaded from addons.mozilla.org on the first start and on in normal and private tabs.
+  The first page waits for it. The first start needs a connection; without one Soot says the blocker is
+  not installed and tries again when you tap its row.
+- The engine's tracking protection set to strict, cookies kept per site, tracking tags stripped from
+  links, Global Privacy Control on, no telemetry and no crash reports. The settings from
+  [`config/user.js`](config/user.js) that mean something on Android are in
+  [`phone/assets/soot-prefs.yaml`](phone/assets/soot-prefs.yaml) and
+  [`Engine.java`](phone/src/dev/wolklaw/soot/Engine.java).
+- The vault, one tap away on the bottom bar: an encrypted copy of your logins, notes and sign-in codes.
+  On a page with a sign-in form Soot fills the login it has for that site, or asks which one when there
+  are several.
+- Autofill in other apps, as before.
+- Links from other apps can open in Soot. Glitch effects can be switched off in the menu.
+
+What is not there yet: bookmarks and history screens, downloads, file uploads, find in page, the uBlock
+Origin dashboard and per-site switch (it runs with its default lists, not the extra lists the PC turns
+on), camera, microphone and location for sites (they are refused), reopening your tabs after Android
+closes the app, a desktop-site switch, and saving a new login from the phone. Only phones with a 64-bit
+ARM processor are covered, which is every phone sold in recent years. It has been run on an Android 16
+emulator, not yet on real phones.
+
+`phone\Soot.apk` (also on the release page) is about 100 MB, nearly all of it the engine.
 
 1. On the PC: **VAULT**, then **PHONE**, then **TURN ON PHONE SYNC**. Windows asks once to allow Soot to
    make changes. That adds one firewall opening named "Soot phone sync (anywhere)": this engine, port
    47600, only from your local network and Tailscale addresses (100.64.0.0/10).
 2. Copy `Soot.apk` to the phone and open it to install. Android asks you to allow installing from that
    source.
-3. In the app, type the address the PC shows and press **PAIR**. Both screens show a six-digit code. If
-   they match, press **THE CODES MATCH** on the PC.
-4. In the app, press **TURN ON AUTOFILL** and choose Soot.
+3. In the app, press **VAULT**, type the address the PC shows and press **PAIR**. Both screens show a
+   six-digit code. If they match, press **THE CODES MATCH** on the PC.
+4. In the vault, press **TURN ON AUTOFILL** and choose Soot, if you want your logins in other apps too.
 
 At home it uses your Wi-Fi. Away from home it works through [Tailscale](https://tailscale.com) (free):
 install it on the PC and the phone, sign in to the same account, and type the PC's 100.x address.
 
 How it is protected: pairing is an ECDH key agreement, checked by the code you compare. The vault travels
 and is stored as AES-256-GCM ciphertext. On the phone the key sits in the Android Keystore, tied to your
-screen lock, so set a PIN or fingerprint.
+screen lock, so set a PIN or fingerprint. If the phone has not been unlocked in the last five minutes,
+the bottom bar says **UNLOCK** before Soot fills a login.
 
 Limits: sync is one way, PC to phone, and only while Soot is running on the PC with the vault unlocked.
 Logins you create on the phone are not saved back.
@@ -248,7 +284,7 @@ in [`launcher/Soot.cs`](launcher/Soot.cs) and `build.cmd` rebuilds it.
 | `engine\` | The Gecko engine, unpacked from Mozilla's official installer on first run. Separate from any Firefox you have. |
 | `profile\` | Your data. Created on first run. |
 | `launcher\` | Source of `Soot.exe` and the icon script. |
-| `phone\` | The Android app: source, and `Soot.apk` in the release. |
+| `phone\` | The Android app: a browser on GeckoView with the vault. Source, and `Soot.apk` in the release. |
 | `setup.cmd` | Downloads the engine again, to repair it or start from a clean one. |
 | `linux\` | The Linux port: `install.sh`, the `soot` launcher (what `Soot.exe` is on Windows), the menu entry and the smoke test. |
 
@@ -258,8 +294,11 @@ You need Windows with the .NET Framework 4 compiler that ships with it.
 
 - `build.cmd` rebuilds `Soot.exe` from `launcher\Soot.cs` and redraws the icons.
 - `setup.cmd` downloads the engine into `engine\`.
-- `phone\build.ps1` rebuilds the Android app with the Android SDK's own tools. It creates a signing key the
-  first time. Keep that key: updates must be signed with the same one.
+- `phone\build.ps1` builds the Android app. It needs a JDK (17 or newer) and the Android SDK, and uses
+  Gradle through the wrapper in `phone\`: the first run downloads Gradle, the Android build plugin, an SDK
+  platform and the engine, about 1 GB, into your Gradle and SDK folders. `-Abi x86_64` builds for an
+  emulator. It creates a signing key the first time. Keep that key: updates must be signed with the same
+  one.
 
 Everything else is plain JavaScript, CSS and HTML that the engine loads from `app\` and `config\` at start.
 
@@ -268,7 +307,9 @@ Everything else is plain JavaScript, CSS and HTML that the engine loads from `ap
 Soot's own code is [MIT licensed](LICENSE). The engine is [Mozilla's Gecko](https://www.mozilla.org/firefox/),
 under the Mozilla Public License 2.0, downloaded from Mozilla and not redistributed here.
 [uBlock Origin](https://github.com/gorhill/uBlock) is by Raymond Hill, GPLv3, installed from
-addons.mozilla.org on first start. Firefox is a trademark of the Mozilla Foundation.
+addons.mozilla.org on first start, on the PC and on the phone. The Android app includes Mozilla's
+[GeckoView](https://mozilla.github.io/geckoview/) (MPL 2.0) and the libraries it depends on, fetched by the
+build. Firefox is a trademark of the Mozilla Foundation.
 
 Made by [Wolklaw](https://wolklaw.dev). Found a bug or want a feature?
 [Open an issue](https://github.com/Wolklaw/Soot/issues).

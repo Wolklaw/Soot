@@ -8,6 +8,8 @@ app/l10n-auto/
 phone/soot.keystore
 phone/soot.keystore.password.txt
 phone/build/
+phone/.gradle/
+phone/local.properties
 phone/*.idsig
 # built files: they ship in the release, not in the source
 Soot.exe

@@ -1,37 +1,24 @@
-# Builds phone\Soot.apk with the Android SDK's own tools. No Gradle, no libraries: the app uses only what Android ships.
-# -NoSecure builds a copy that allows screenshots, for checking the look on an emulator. Never install that one on a real phone.
-param([switch]$NoSecure)
+# Builds Soot for Android. The app is plain Java plus Mozilla's GeckoView engine, put together by Gradle.
+# The first run downloads Gradle, the Android build plugin and the engine (about 1 GB, kept in ~\.gradle).
+#
+#   phone\build.ps1                  phone\Soot.apk, for phones (arm64-v8a)
+#   phone\build.ps1 -Abi x86_64      phone\build\Soot-x86_64.apk, for emulators
+#   -NoSecure                        a copy that allows screenshots of the vault and private tabs, for checking
+#                                    the look on an emulator. Never install that one on a real phone.
+param(
+    [switch]$NoSecure,
+    [ValidateSet('arm64-v8a', 'x86_64', 'armeabi-v7a')][string]$Abi = 'arm64-v8a'
+)
 $ErrorActionPreference = 'Continue'
 $here = $PSScriptRoot
-$sdk = if ($env:ANDROID_HOME) { $env:ANDROID_HOME } else { "$env:LOCALAPPDATA\Android\Sdk" }
-$bt = (Get-ChildItem "$sdk\build-tools" -Directory | Sort-Object Name | Select-Object -Last 1).FullName
-$jar = (Get-ChildItem "$sdk\platforms" -Directory | Sort-Object Name | Select-Object -Last 1).FullName + '\android.jar'
-$out = "$here\build"; if (Test-Path $out) { Remove-Item $out -Recurse -Force }
-New-Item -ItemType Directory -Force "$out\gen", "$out\classes", "$out\dex", "$out\src" | Out-Null
+if (-not $env:ANDROID_HOME) { $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk" }
+if (-not (Test-Path "$env:ANDROID_HOME\platforms")) { throw "Android SDK not found at $env:ANDROID_HOME. Install it or set ANDROID_HOME." }
 
 # launcher icon: Soot's mark, from the same script that draws the desktop icon
 if (-not (Test-Path "$here\res\mipmap-xxhdpi\ic_launcher.png")) {
     New-Item -ItemType Directory -Force "$here\res\mipmap-xxhdpi" | Out-Null
     Copy-Item "$here\..\app\content\brand\about-logo.png" "$here\res\mipmap-xxhdpi\ic_launcher.png"
 }
-
-Copy-Item "$here\src\*" "$out\src" -Recurse
-if ($NoSecure) {
-    $f = "$out\src\dev\wolklaw\soot\MainActivity.java"
-    [IO.File]::WriteAllText($f, [IO.File]::ReadAllText($f).Replace('getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);', ''))
-}
-
-& "$bt\aapt2.exe" compile --dir "$here\res" -o "$out\res.zip"; if ($LASTEXITCODE) { throw 'aapt2 compile failed' }
-& "$bt\aapt2.exe" link -o "$out\base.apk" -I $jar --manifest "$here\AndroidManifest.xml" --java "$out\gen" `
-    --min-sdk-version 30 --target-sdk-version 36 --version-code 1 --version-name 0.1 "$out\res.zip"; if ($LASTEXITCODE) { throw 'aapt2 link failed' }
-
-$sources = Get-ChildItem "$out\src", "$out\gen" -Recurse -Filter *.java | ForEach-Object FullName
-& javac -nowarn -encoding UTF-8 --release 11 -cp $jar -d "$out\classes" $sources; if ($LASTEXITCODE) { throw 'javac failed' }
-$classes = Get-ChildItem "$out\classes" -Recurse -Filter *.class | ForEach-Object FullName
-& "$bt\d8.bat" --lib $jar --min-api 30 --output "$out\dex" $classes; if ($LASTEXITCODE) { throw 'd8 failed' }
-
-Push-Location "$out\dex"; & jar uf "$out\base.apk" classes.dex; Pop-Location; if ($LASTEXITCODE) { throw 'adding classes.dex failed' }
-& "$bt\zipalign.exe" -f 4 "$out\base.apk" "$out\aligned.apk"; if ($LASTEXITCODE) { throw 'zipalign failed' }
 
 # signing key: made once and kept. Updates to the app must be signed with the same key, so back these two files up.
 $ks = "$here\soot.keystore"; $pwFile = "$here\soot.keystore.password.txt"
@@ -40,7 +27,18 @@ if (-not (Test-Path $ks)) {
     Set-Content $pwFile $pw -Encoding ascii -NoNewline
     & keytool -genkeypair -keystore $ks -alias soot -keyalg RSA -keysize 2048 -validity 10000 -storepass $pw -keypass $pw -dname 'CN=Soot' 2>$null
 }
-$pw = (Get-Content $pwFile -Raw).Trim()
-$apk = if ($NoSecure) { "$out\Soot-screenshots-allowed.apk" } else { "$here\Soot.apk" }
-& "$bt\apksigner.bat" sign --ks $ks --ks-key-alias soot --ks-pass "pass:$pw" --key-pass "pass:$pw" --out $apk "$out\aligned.apk"; if ($LASTEXITCODE) { throw 'signing failed' }
-"built $apk ({0:N0} KB)" -f ((Get-Item $apk).Length / 1KB)
+$env:SOOT_KEYSTORE_PASSWORD = (Get-Content $pwFile -Raw).Trim()      # passed in the environment, not on the command line
+
+$secure = if ($NoSecure) { 'false' } else { 'true' }
+& "$here\gradlew.bat" -p $here --console=plain assembleRelease "-Pabi=$Abi" "-Psecure=$secure" 2>&1 | ForEach-Object { "$_" }
+$failed = $LASTEXITCODE
+$env:SOOT_KEYSTORE_PASSWORD = $null
+if ($failed) { throw 'the Gradle build failed' }
+
+$built = "$here\build\outputs\apk\release\phone-release.apk"
+if (-not (Test-Path $built)) { $built = (Get-ChildItem "$here\build\outputs\apk\release\*.apk" | Select-Object -First 1).FullName }
+$apk = if ($NoSecure) { "$here\build\Soot-$Abi-screenshots-allowed.apk" }
+       elseif ($Abi -eq 'arm64-v8a') { "$here\Soot.apk" }
+       else { "$here\build\Soot-$Abi.apk" }
+Copy-Item $built $apk -Force
+"built $apk ({0:N1} MB)" -f ((Get-Item $apk).Length / 1MB)
