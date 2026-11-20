@@ -227,9 +227,10 @@ screen; on, it keeps a lasting notification. Everything stays on your network: t
 straight to the PC over TLS 1.3, each side trusts only the other's certificate from pairing, and the
 phone's key never leaves the Android Keystore. Nothing goes through an outside server.
 
-It has been tested on an Android 16 emulator against a stand-in for the PC
-([`phone/tools/spark_link_pc.py`](phone/tools/spark_link_pc.py)), not yet against the real Spark Link
-app or on a real phone. Finding the PC by mDNS, the QR camera, and notifications to the PC are untested.
+It has been tested on an Android 16 emulator against the Spark Link service (run by its own test
+harness on Windows) and against a stand-in PC ([`phone/tools/spark_link_pc.py`](phone/tools/spark_link_pc.py)).
+It has not been run on a real phone or on SparkOS itself yet. Finding the PC by mDNS, the QR camera,
+and notifications to the PC are untested.
 
 ### Clear and import
 
