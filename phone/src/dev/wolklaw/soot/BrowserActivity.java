@@ -209,8 +209,15 @@ public final class BrowserActivity extends Activity implements Tab.Host, Engine.
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        LinkService.screenShown(this);
+    }
+
+    @Override
     protected void onStop() {
         if (Tab.current != null) Tab.current.session.setActive(false);
+        LinkService.screenHidden(this);
         super.onStop();
     }
 
@@ -396,6 +403,15 @@ public final class BrowserActivity extends Activity implements Tab.Host, Engine.
         sheet.row("NEW TAB", null, 0, () -> newTab(false));
         sheet.row("NEW PRIVATE TAB", null, 0, () -> newTab(true));
         sheet.row("VAULT", paired ? "PAIRED" : "NOT PAIRED", paired ? Ui.ACCENT : Ui.MUTED, () -> startActivity(new Intent(this, VaultActivity.class)));
+        boolean linked = LinkState.paired(this), up = LinkService.connected();
+        Tab cur = Tab.current;
+        if (up && cur != null && !cur.home && !cur.priv && cur.url.matches("(?i)^https?://.*"))
+            sheet.row("SEND TAB TO PC", LinkState.pcName(this).toUpperCase(), Ui.ACCENT, () -> {
+                if (LinkService.sendUrl(this, cur.url)) { say("SENT TO " + LinkState.pcName(this).toUpperCase(), false); bar.burst(); }
+                else say("LINKS ARE SWITCHED OFF ON THE PC OR HERE", true);
+            });
+        sheet.row("LINK TO PC", !linked ? "NOT PAIRED" : up ? "CONNECTED" : "NOT CONNECTED", up ? Ui.ACCENT : Ui.MUTED,
+                () -> startActivity(new Intent(this, LinkActivity.class)));
         sheet.row("UBLOCK ORIGIN", Engine.blocker == Engine.BLOCKER_FAILED ? "NOT INSTALLED  ·  TRY AGAIN" : blockerWord() + (Engine.blockerVersion.isEmpty() ? "" : "  " + Engine.blockerVersion),
                 Engine.blocker == Engine.BLOCKER_ON ? Ui.ACCENT : Ui.PINK, Engine.blocker == Engine.BLOCKER_FAILED ? Engine::retryBlocker : null);
         sheet.row("TRACKING PROTECTION", "STRICT", Ui.ACCENT, null);

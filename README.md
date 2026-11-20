@@ -202,6 +202,36 @@ the bottom bar says **UNLOCK** before Soot fills a login.
 Limits: sync is one way, PC to phone, and only while Soot is running on the PC with the vault unlocked.
 Logins you create on the phone are not saved back.
 
+#### Link to PC (Spark Link)
+
+The phone side of Spark Link, SparkOS's own phone link (the PC side is the Spark Link app in SparkOS;
+both follow `docs/spark-link-protocol.md` in the SparkOS repository). Open it from **MENU**, **LINK TO
+PC**. In Spark Link on the PC choose Pair a phone, then on the phone **SCAN THE CODE**, paste the
+pairing link, or type the address and code the PC shows (Soot then shows the PC's key to compare with
+the PC screen). Once paired:
+
+- **Links**: **SEND TAB TO PC** in the menu, or Share, **Send to PC** from any app. Links from the PC open
+  in Soot (when Soot is in the background they wait in a notification: Android doesn't let an app open
+  a screen on its own).
+- **Files** both ways: **FILES** on the Link screen or Share, **Send to PC**. Files from the PC go to
+  Downloads after you accept them (or always, if you switch that on).
+- **Shared clipboard**, off by default. Text copied in Soot goes to the PC; for other apps use **SEND
+  CLIPBOARD** in the Link notification, because Android lets an app read the clipboard only while it is
+  on screen.
+- **Notifications** on the PC, off by default, read-only, after you give Soot Android's notification
+  access. **Battery** level on the PC. **Find my phone**: the PC rings the phone on the alarm volume
+  until you tap the notification (at most 10 minutes).
+
+Each one has its own switch. **BACKGROUND CONNECTION** off means Soot links only while it is open on
+screen; on, it keeps a lasting notification. Everything stays on your network: the phone connects
+straight to the PC over TLS 1.3, each side trusts only the other's certificate from pairing, and the
+phone's key never leaves the Android Keystore. Nothing goes through an outside server.
+
+It has been tested on an Android 16 emulator against the Spark Link service (run by its own test
+harness on Windows) and against a stand-in PC ([`phone/tools/spark_link_pc.py`](phone/tools/spark_link_pc.py)).
+It has not been run on a real phone or on SparkOS itself yet. Finding the PC by mDNS, the QR camera,
+and notifications to the PC are untested.
+
 ### Clear and import
 
 One button clears cache and cookies. The same page imports favourites, passwords and history from other
@@ -309,7 +339,7 @@ under the Mozilla Public License 2.0, downloaded from Mozilla and not redistribu
 [uBlock Origin](https://github.com/gorhill/uBlock) is by Raymond Hill, GPLv3, installed from
 addons.mozilla.org on first start, on the PC and on the phone. The Android app includes Mozilla's
 [GeckoView](https://mozilla.github.io/geckoview/) (MPL 2.0) and the libraries it depends on, fetched by the
-build. Firefox is a trademark of the Mozilla Foundation.
+build, and [ZXing](https://github.com/zxing/zxing) (Apache 2.0) to read the pairing QR code. Firefox is a trademark of the Mozilla Foundation.
 
 Made by [Wolklaw](https://wolklaw.dev). Found a bug or want a feature?
 [Open an issue](https://github.com/Wolklaw/Soot/issues).
