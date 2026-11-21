@@ -302,7 +302,26 @@ export const Phone = {
     this.socket = sock;
   },
 
+  // Home networks, Tailscale and this PC only. The firewall rule says the same, but a desktop whose
+  // firewall zone opens every high port (Fedora's, SparkOS's) would let any network in otherwise.
+  localPeer(host) {
+    const ip = String(host || "").replace(/^::ffff:/i, "").split("%")[0].toLowerCase();
+    const v4 = /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/.exec(ip);
+    if (v4) {
+      const [a, b] = [Number(v4[1]), Number(v4[2])];
+      return a === 10 || a === 127 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168)
+        || (a === 100 && b >= 64 && b <= 127) || (a === 169 && b === 254);
+    }
+    return ip === "::1" || /^fe[89ab][0-9a-f]:/.test(ip) || /^f[cd][0-9a-f]{2}:/.test(ip);
+  },
+
   accept(transport) {
+    let host = "";
+    try { host = transport.host; } catch (e) {}
+    if (!this.localPeer(host)) {
+      try { transport.close(Cr.NS_ERROR_ABORT); } catch (e) {}
+      return;
+    }
     const input = transport.openInputStream(0, 0, 0).QueryInterface(Ci.nsIAsyncInputStream);
     const output = transport.openOutputStream(Ci.nsITransport.OPEN_BLOCKING, 0, 0);
     const bin = Cc["@mozilla.org/binaryinputstream;1"].createInstance(Ci.nsIBinaryInputStream);
