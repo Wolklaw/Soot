@@ -27,7 +27,8 @@
       "Stories": false,
       "SponsoredPocket": false,
       "SponsoredStories": false,
-      "Snippets": false
+      "Snippets": false,
+      "Locked": true
     },
     "FirefoxSuggest": {
       "WebSuggestions": false,
@@ -38,6 +39,10 @@
       "Default": "Google"
     },
     "DisablePocket": true,
+    "Preferences": {
+      "browser.newtabpage.trainhopAddon.xpiBaseURL": { "Value": "", "Status": "locked" },
+      "browser.newtabpage.trainhopAddonDeployment.version": { "Value": "", "Status": "locked" }
+    },
     "EnableTrackingProtection": {
       "Value": true,
       "Locked": false,
