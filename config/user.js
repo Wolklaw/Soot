@@ -50,6 +50,8 @@ user_pref("toolkit.coverage.opt-out", true);
 user_pref("app.shield.optoutstudies.enabled", false);
 user_pref("app.normandy.enabled", false);
 user_pref("app.normandy.api_url", "");
+user_pref("nimbus.rollouts.enabled", false);                       // rollouts are separate from studies: no remote feature or page changes
+user_pref("services.sync.prefs.sync.nimbus.rollouts.enabled", false); // keep that choice to Soot, not your other synced browsers
 user_pref("breakpad.reportURL", "");
 user_pref("browser.tabs.crashReporting.sendReport", false);
 user_pref("browser.crashReports.unsubmittedCheck.autoSubmit2", false);
@@ -73,6 +75,10 @@ user_pref("browser.newtabpage.activity-stream.newtabWallpapers.v2.enabled", fals
 user_pref("browser.newtabpage.activity-stream.widgets.system.enabled", false);
 user_pref("browser.newtabpage.activity-stream.widgets.enabled", false);
 user_pref("browser.newtabpage.activity-stream.showSearch", true);
+// Mozilla can push a newer new tab page to the engine between releases ("train-hop"). It brings its own
+// layout and resets the story and sponsored settings above, so Soot keeps the new tab that ships with the engine.
+user_pref("browser.newtabpage.trainhopAddon.xpiBaseURL", "");
+user_pref("browser.newtabpage.trainhopAddonDeployment.version", "");
 user_pref("browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar", false);
 
 // --- address bar: no sponsored or trending suggestions ---
