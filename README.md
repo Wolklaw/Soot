@@ -240,13 +240,16 @@ Keystore. Nothing goes through an outside server of Soot's or Spark Link's.
 **Away from home** it works through [Tailscale](https://tailscale.com), like the vault sync: put the PC and
 the phone on the same tailnet. While they're linked at home the PC tells the phone its Tailscale address;
 when the home network doesn't answer, the phone tries that address. The Link screen shows it under PC
-ADDRESS. This needs the Spark Link update that sends that address.
+ADDRESS. This needs the Spark Link update that sends that address. You can also type the PC's 100.x
+address there: Soot keeps it as a Tailscale address, tried after the home network, and the PC can't
+overwrite it. When the PC can't be reached, the Link screen lists each address tried and why it failed.
 
 It has been tested on an Android 16 emulator against the Spark Link service (run by its own test
 harness on Windows) and against a stand-in PC ([`phone/tools/spark_link_pc.py`](phone/tools/spark_link_pc.py)).
 It has not been run on a real phone or on SparkOS itself yet. Finding the PC by mDNS, the QR camera,
-and notifications to the PC are untested. The Tailscale fallback was tested on the PC side only, with a
-reference client. The app with that change (0.4) is built but has not been run on a phone or emulator yet.
+and notifications to the PC are untested. The Tailscale fallback works on a real phone: on 2026-11-24,
+Soot 0.4 on a Pixel 8 Pro reached Spark Link on SparkOS over Tailscale with Wi-Fi off. The typed Tailscale
+address and the list of failed tries (0.4.1) are built but not yet run on a phone.
 
 ### Clear and import
 
