@@ -63,8 +63,16 @@ final class LinkState {
     /** The PC's Tailscale addresses, from its hello. Tried after the local network, so the link works away from home. */
     static List<String> tailnet(Context c) {
         List<String> out = new ArrayList<>();
-        for (String h : prefs(c).getString("tailnet", "").split(",")) if (isTailnet(h)) out.add(h);
+        String typed = typedTailnet(c);
+        if (!typed.isEmpty()) out.add(typed);
+        for (String h : prefs(c).getString("tailnet", "").split(",")) if (isTailnet(h) && !out.contains(h)) out.add(h);
         return out;
+    }
+
+    /** A Tailscale address the owner typed. Kept apart from the PC's list, so a hello can't erase it. */
+    static String typedTailnet(Context c) {
+        String h = prefs(c).getString("tailnet-typed", "");
+        return isTailnet(h) ? h : "";
     }
 
     static void saveTailnet(Context c, List<String> hosts) {
@@ -84,7 +92,7 @@ final class LinkState {
     }
 
     static void forgetPc(Context c) {
-        prefs(c).edit().remove("pc-id").remove("pc-name").remove("pc-fp").remove("host").remove("port").remove("manual").remove("tailnet").remove("always-accept").apply();
+        prefs(c).edit().remove("pc-id").remove("pc-name").remove("pc-fp").remove("host").remove("port").remove("manual").remove("tailnet").remove("tailnet-typed").remove("always-accept").apply();
     }
 
     // ---- switches ----

@@ -343,7 +343,8 @@ public final class LinkActivity extends Activity implements LinkService.Listener
         card.addView(Ui.text(this, pc, 16, Ui.TEXT, true));
         String where = up ? LinkService.detail : s == LinkService.State.CONNECTING ? "trying " + LinkService.detail
                 : s == LinkService.State.FORGOTTEN ? "The PC no longer knows this phone. It was unpaired there, or Spark Link was reset."
-                : s == LinkService.State.UNREACHABLE ? "Not found on this network. Is the PC on, with Spark Link running, on the same Wi-Fi?"
+                : s == LinkService.State.UNREACHABLE ? "Can't reach the PC. Is it on, with Spark Link running? Away from home, Tailscale must be on on both."
+                    + (LinkService.lastTries.isEmpty() ? "" : " Tried " + LinkService.lastTries + ".")
                 : s == LinkService.State.OFF ? "Not connected" : "Looking on this network...";
         card.addView(note(where, s == LinkService.State.FORGOTTEN ? Ui.PINK : Ui.MUTED));
         body.addView(card, Ui.fill(this, 8));
@@ -401,18 +402,25 @@ public final class LinkActivity extends Activity implements LinkService.Listener
         body.addView(note("Soot finds the PC by itself. If your network blocks that, type the address Spark Link shows.", Ui.DIM), Ui.fill(this, 4));
         List<String> tail = LinkState.tailnet(this);
         body.addView(note(tail.isEmpty()
-                ? "Away from home: put the PC and this phone on Tailscale. Soot learns the PC's Tailscale address the next time they connect."
+                ? "Away from home: put the PC and this phone on Tailscale. Soot learns the PC's Tailscale address the next time they connect, or type it below (the 100.x address Spark Link shows)."
                 : "Away from home, Soot reaches the PC over Tailscale at " + String.join(", ", tail) + ". Keep Tailscale on on this phone.", Ui.DIM), Ui.fill(this, 4));
         EditText addr = field("found automatically");
         addr.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-        addr.setText(LinkState.manualAddress(this));
+        addr.setText(LinkState.manualAddress(this).isEmpty() ? LinkState.typedTailnet(this) : LinkState.manualAddress(this));
         body.addView(addr, Ui.fill(this, 6));
         body.addView(button("SAVE ADDRESS", false, v -> {
             String t = addr.getText().toString().trim();
-            if (!t.isEmpty() && LinkService.splitAddress(t) == null) { say("TYPE AN ADDRESS LIKE 192.168.1.23:47100", true); return; }
-            LinkState.prefs(this).edit().putString("manual", t).apply();
+            String[] hp = t.isEmpty() ? null : LinkService.splitAddress(t);
+            if (!t.isEmpty() && hp == null) { say("TYPE AN ADDRESS LIKE 192.168.1.23:47100", true); return; }
+            if (hp != null && LinkState.isTailnet(hp[0])) {
+                // a Tailscale address: tried after the home network, so it doesn't slow the link at home
+                LinkState.prefs(this).edit().putString("tailnet-typed", hp[0]).remove("manual").apply();
+            } else {
+                LinkState.prefs(this).edit().putString("manual", t).remove("tailnet-typed").apply();
+            }
             LinkService.recheck();
-            say(t.isEmpty() ? "FINDING THE PC AUTOMATICALLY" : "ADDRESS SAVED", false);
+            render();
+            say(t.isEmpty() ? "FINDING THE PC AUTOMATICALLY" : hp != null && LinkState.isTailnet(hp[0]) ? "TAILSCALE ADDRESS SAVED" : "ADDRESS SAVED", false);
         }), Ui.fill(this, 6));
 
         TextView un = Ui.label(this, "UNPAIR " + pc.toUpperCase(Locale.ROOT), Ui.PINK);

@@ -78,6 +78,9 @@ public final class LinkService extends Service {
 
     static volatile State state = State.OFF;
     static volatile String detail = "";
+    /** The last round that reached nothing: each address and why it failed, for the Link screen. */
+    static volatile String lastTries = "";
+    private final List<String> roundErrors = new ArrayList<>();
     static volatile Set<String> pcFeatures = new HashSet<>();
     static Listener listener;
     private static LinkService running;
@@ -239,6 +242,7 @@ public final class LinkService extends Service {
             } catch (Exception e) {
                 if (stopping) return;
                 Log.i(TAG, "link to " + where[0] + " ended: " + e);
+                if (!reached) roundErrors.add(where[0] + " (" + why(e) + ")");
                 forgottenInARow = 0;
                 if (where[0].equals(foundHost)) foundHost = null;       // look again
             }
@@ -246,13 +250,24 @@ public final class LinkService extends Service {
             pcFeatures = new HashSet<>();
             if (stopping) return;
             // not reached: try the next address (home network, then Tailscale) before waiting
-            if (reached) tried.clear();
+            if (reached) { tried.clear(); roundErrors.clear(); lastTries = ""; }
             else if (addresses().stream().anyMatch(hp -> !tried.contains(hp[0] + ":" + hp[1]))) continue;
-            else tried.clear();
+            else { tried.clear(); lastTries = String.join(", ", roundErrors); roundErrors.clear(); }
             if (state != State.FORGOTTEN) setState(failures >= 2 ? State.UNREACHABLE : State.SEARCHING, "");
             pause(BACKOFF[Math.min(failures, BACKOFF.length - 1)]);
             failures++;
         }
+    }
+
+    /** A few words on why an address didn't answer. */
+    private static String why(Exception e) {
+        String m = String.valueOf(e.getMessage());
+        if (e instanceof java.net.SocketTimeoutException) return "no answer";
+        if (m.contains("ENETUNREACH") || m.contains("EHOSTUNREACH")) return "no route";
+        if (m.contains("ECONNREFUSED")) return "refused";
+        if (e instanceof java.net.ConnectException) return "can't connect";
+        if (e instanceof javax.net.ssl.SSLException) return "TLS failed";
+        return e.getClass().getSimpleName();
     }
 
     private void pause(int seconds) {
