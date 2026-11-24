@@ -126,17 +126,27 @@ What is not there yet, or not proven:
 Saved logins with search, a password generator, encrypted notes, two-step sign-in codes, card and address
 autofill, and encrypted sharing of a single login.
 
-- **Its own password.** The vault opens only after you type a vault password. The first visit makes you
-  choose one (12 characters or more). Each login is encrypted with AES-256, and the key is locked with
-  your password, stretched through 600,000 rounds of PBKDF2-SHA256.
+- **One master password.** The vault uses the same password Soot asks for when it starts: typing it there
+  opens the vault too, so you don't type it twice. Without it set, the first vault visit makes you choose
+  one (12 characters or more). Each login is encrypted with AES-256, and the key is locked with your
+  password, stretched through 600,000 rounds of PBKDF2-SHA256.
 - **Keep it unlocked for as long as you choose:** this visit only, 15 minutes, 1 hour, 4 hours, or until
-  you close Soot. Closing Soot always locks it. LOCK NOW locks it at once.
+  you close Soot. The same choice applies when you unlock at startup. Closing Soot always locks it. LOCK
+  NOW locks it at once.
 - **Password health:** weak, reused and old passwords are flagged, and CHECK BREACHES looks each one up in
   known leaks without sending the password.
-- **Dashlane in and out:** imports Dashlane's export (.zip or credentials.csv) and exports in the same
-  layout.
+- **Import from Dashlane, Bitwarden and others:** Dashlane's .zip or .csv files, Bitwarden's .csv, .json
+  and password-protected .json (it asks for the file password; exports locked to a Bitwarden account, or
+  protected with Argon2id, can't be opened), and any CSV with url, username and password columns.
+  Sign-in codes become two-step codes, secure notes, cards and IDs become encrypted notes, and logins
+  without a web address are kept as notes so nothing is lost.
+- **Duplicates checked:** an account already saved with the same password is skipped. One saved with a
+  different password is listed for you to keep or replace. Copies already in the vault get a DUPLICATE
+  mark, and REMOVE EXACT COPIES deletes the ones with the same site, username and password.
+- **Sorted your way:** by site, username, last used, last changed, or problems first. The choice is kept.
+- **Export:** EXPORT CSV writes Dashlane's layout.
 
-There is no recovery. If you forget the vault password, the vault cannot be opened.
+There is no recovery. If you forget the master password, the vault cannot be opened.
 
 <p align="center"><img src="docs/vault.png" alt="The vault, unlocked: six example logins with weak and reused passwords flagged, and a health score" width="820"></p>
 
@@ -223,14 +233,20 @@ the PC screen). Once paired:
   until you tap the notification (at most 10 minutes).
 
 Each one has its own switch. **BACKGROUND CONNECTION** off means Soot links only while it is open on
-screen; on, it keeps a lasting notification. Everything stays on your network: the phone connects
-straight to the PC over TLS 1.3, each side trusts only the other's certificate from pairing, and the
-phone's key never leaves the Android Keystore. Nothing goes through an outside server.
+screen; on, it keeps a lasting notification. The phone connects straight to the PC over TLS 1.3, each
+side trusts only the other's certificate from pairing, and the phone's key never leaves the Android
+Keystore. Nothing goes through an outside server of Soot's or Spark Link's.
+
+**Away from home** it works through [Tailscale](https://tailscale.com), like the vault sync: put the PC and
+the phone on the same tailnet. While they're linked at home the PC tells the phone its Tailscale address;
+when the home network doesn't answer, the phone tries that address. The Link screen shows it under PC
+ADDRESS. This needs the Spark Link update that sends that address.
 
 It has been tested on an Android 16 emulator against the Spark Link service (run by its own test
 harness on Windows) and against a stand-in PC ([`phone/tools/spark_link_pc.py`](phone/tools/spark_link_pc.py)).
 It has not been run on a real phone or on SparkOS itself yet. Finding the PC by mDNS, the QR camera,
-and notifications to the PC are untested.
+and notifications to the PC are untested. The Tailscale fallback was tested on the PC side only, with a
+reference client; the app with that change has not been built or run yet.
 
 ### Clear and import
 
@@ -299,7 +315,7 @@ that folder up. Delete it to start fresh.
 **A site is broken.** Click the shield in the address bar and turn protection off for that site. If it
 still fails, try the uBlock Origin button and switch it off for the site.
 
-**I forgot my vault password.** There is no recovery. Deleting `profile\` starts a new, empty vault.
+**I forgot my master password.** There is no recovery. Deleting `profile\` starts a new, empty vault.
 
 **Why does Windows warn me when I run it?** `Soot.exe` is not code-signed. The source of the launcher is
 in [`launcher/Soot.cs`](launcher/Soot.cs) and `build.cmd` rebuilds it.

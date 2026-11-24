@@ -195,21 +195,44 @@ function addButtons() {
   make("soot-clear-button", "Clear", "Clear cache and cookies, import favourites", "data");
 }
 
-// ---- vault lock: the vault page asks for the vault password and remembers it for as long as you chose ----
+// ---- vault lock: one password for Soot and its vault ----
+// The engine asks for the master password when Soot starts (or the first time a page needs a saved login).
+// Typing it there signs in the key store, and that sign-in opens the vault too: the vault page asks only when
+// the key store is signed out (never signed in, or locked by LOCK NOW or the remembered time running out).
 
 const keyToken = () => Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(Ci.nsIPKCS11Token);
 const PW_KEK = "lockstore::kek::password:profile";      // same record the engine's ProfileKekPassword uses
+const timers = () => ChromeUtils.importESModule("resource://gre/modules/Timer.sys.mjs");
 
 export const Vault = {
-  until: 0,        // time the vault stays open to; 0 = locked, Infinity = until Soot closes. Never written to disk.
+  until: 0,          // time the vault stays open to; 0 = not set, Infinity = until Soot closes. Never written to disk.
+  visitOnly: false,  // "this visit only": open until the vault page that was unlocked closes
   _timer: null,
 
   get open() {
     const t = keyToken();
-    return t.hasPassword && t.isLoggedIn && Date.now() < this.until;
+    if (!t.hasPassword || !t.isLoggedIn) return false;
+    if (!this.visitOnly && this.until === 0) this.adopt();
+    return this.visitOnly || Date.now() < this.until;
   },
 
-  // minutes: 0 = only for the page that asked, -1 = until Soot closes
+  // minutes: 0 = this visit only, -1 = until Soot closes
+  _keepOpen(minutes) {
+    const { setTimeout, clearTimeout } = timers();
+    if (this._timer) { clearTimeout(this._timer); this._timer = null; }
+    this.visitOnly = minutes === 0;
+    if (minutes > 0) {
+      this.until = Date.now() + minutes * 60000;
+      this._timer = setTimeout(() => this.lock(), minutes * 60000);
+    } else this.until = minutes < 0 ? Infinity : 0;
+  },
+
+  // The master password was typed in the engine's own prompt: the vault is open for the time chosen on the vault page.
+  adopt() {
+    if (!keyToken().isLoggedIn) return;
+    this._keepOpen(Services.prefs.getIntPref("soot.vault.remember", 15));
+  },
+
   async unlock(password, minutes) {
     const t = keyToken();
     if (!t.hasPassword) return false;
@@ -224,22 +247,17 @@ export const Vault = {
         await lockstore.unlockKek(PW_KEK, password, Number.MAX_SAFE_INTEGER);
       }
     } catch (e) { console.error(e); }
-    const { setTimeout, clearTimeout } = ChromeUtils.importESModule("resource://gre/modules/Timer.sys.mjs");
-    if (this._timer) { clearTimeout(this._timer); this._timer = null; }
-    if (minutes < 0) this.until = Infinity;
-    else if (minutes > 0) {
-      this.until = Date.now() + minutes * 60000;
-      this._timer = setTimeout(() => this.lock(), minutes * 60000);
-    } else this.until = 0;
+    this._keepOpen(minutes);
     return true;
   },
 
   lock() {
     try {
-      const { clearTimeout } = ChromeUtils.importESModule("resource://gre/modules/Timer.sys.mjs");
+      const { clearTimeout } = timers();
       if (this._timer) { clearTimeout(this._timer); this._timer = null; }
     } catch (e) {}
     this.until = 0;
+    this.visitOnly = false;
     try { Cc["@mozilla.org/security/sdr;1"].getService(Ci.nsISecretDecoderRing).logoutAndTeardown(); }
     catch (e) { try { keyToken().logout(); } catch (e2) {} }
     Services.obs.notifyObservers(null, "soot-vault-locked");
@@ -450,6 +468,8 @@ export function start() {
     });
     return;
   }
+  // the master password typed in the engine's prompt (at start, or when a page needed a login) opens the vault
+  Services.obs.addObserver(() => { try { Vault.adopt(); } catch (e) { console.error(e); } }, "passwordmgr-crypto-login");
   once("final-ui-startup", () => {
     registerBranding(); addButtons();
     try { if (Phone.enabled) Phone.listen(); } catch (e) { console.error(e); }

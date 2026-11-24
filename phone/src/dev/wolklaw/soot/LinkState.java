@@ -60,8 +60,31 @@ final class LinkState {
 
     static void saveAddress(Context c, String host, int port) { prefs(c).edit().putString("host", host).putInt("port", port).apply(); }
 
+    /** The PC's Tailscale addresses, from its hello. Tried after the local network, so the link works away from home. */
+    static List<String> tailnet(Context c) {
+        List<String> out = new ArrayList<>();
+        for (String h : prefs(c).getString("tailnet", "").split(",")) if (isTailnet(h)) out.add(h);
+        return out;
+    }
+
+    static void saveTailnet(Context c, List<String> hosts) {
+        String joined = String.join(",", hosts);
+        if (!joined.equals(prefs(c).getString("tailnet", ""))) prefs(c).edit().putString("tailnet", joined).apply();
+    }
+
+    /** 100.64.0.0/10, the range Tailscale hands out. */
+    static boolean isTailnet(String host) {
+        String[] p = host == null ? new String[0] : host.split("\\.");
+        if (p.length != 4) return false;
+        try {
+            int[] n = new int[4];
+            for (int i = 0; i < 4; i++) { if (!p[i].matches("\\d{1,3}")) return false; n[i] = Integer.parseInt(p[i]); if (n[i] > 255) return false; }
+            return n[0] == 100 && n[1] >= 64 && n[1] <= 127;
+        } catch (NumberFormatException e) { return false; }
+    }
+
     static void forgetPc(Context c) {
-        prefs(c).edit().remove("pc-id").remove("pc-name").remove("pc-fp").remove("host").remove("port").remove("manual").remove("always-accept").apply();
+        prefs(c).edit().remove("pc-id").remove("pc-name").remove("pc-fp").remove("host").remove("port").remove("manual").remove("tailnet").remove("always-accept").apply();
     }
 
     // ---- switches ----
