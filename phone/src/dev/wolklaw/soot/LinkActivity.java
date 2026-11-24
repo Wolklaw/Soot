@@ -21,6 +21,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 import java.util.Locale;
+import java.util.List;
 
 /**
  * Link to PC: pairs Soot with Spark Link on a SparkOS PC (QR code, pasted link or typed address),
@@ -398,6 +399,10 @@ public final class LinkActivity extends Activity implements LinkService.Listener
 
         body.addView(Ui.label(this, "PC ADDRESS", Ui.MUTED), Ui.fill(this, 20));
         body.addView(note("Soot finds the PC by itself. If your network blocks that, type the address Spark Link shows.", Ui.DIM), Ui.fill(this, 4));
+        List<String> tail = LinkState.tailnet(this);
+        body.addView(note(tail.isEmpty()
+                ? "Away from home: put the PC and this phone on Tailscale. Soot learns the PC's Tailscale address the next time they connect."
+                : "Away from home, Soot reaches the PC over Tailscale at " + String.join(", ", tail) + ". Keep Tailscale on on this phone.", Ui.DIM), Ui.fill(this, 4));
         EditText addr = field("found automatically");
         addr.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
         addr.setText(LinkState.manualAddress(this));

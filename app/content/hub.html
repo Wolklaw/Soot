@@ -21,11 +21,11 @@
 
     <!-- ===== vault ===== -->
     <section id="vault" hidden>
-      <!-- the vault opens only with its password; the first visit makes you choose one -->
+      <!-- the vault opens with the master password (typed when Soot starts, or here); the first visit makes you choose one -->
       <form class="editor" id="gate" hidden>
         <div class="k" id="gate-title">VAULT LOCKED</div>
         <div id="gate-text"></div>
-        <label><span id="gate-pw-label">VAULT PASSWORD</span><input id="gate-pw" type="password" autocomplete="off" required></label>
+        <label><span id="gate-pw-label">MASTER PASSWORD</span><input id="gate-pw" type="password" autocomplete="off" required></label>
         <label id="gate-pw2-row" hidden>REPEAT IT<input id="gate-pw2" type="password" autocomplete="off"></label>
         <label>KEEP THE VAULT UNLOCKED FOR<select id="gate-remember">
           <option value="0">This visit only. Ask every time</option>
@@ -36,21 +36,21 @@
         </select></label>
         <div class="result bad" id="gate-out"></div>
         <div class="row"><button class="btn primary" type="submit" id="gate-go">UNLOCK</button></div>
-        <p class="note" id="gate-note">The password is never stored. Closing Soot always locks the vault, whatever you pick here.</p>
+        <p class="note" id="gate-note">The password is never stored. Typing it when Soot starts opens the vault for the same time. Closing Soot always locks the vault.</p>
       </form>
       <div id="vault-body" hidden>
       <div class="row lockrow">
         <span class="chip" id="lock-state"></span>
-        <button class="btn small" id="lock-set">CHANGE VAULT PASSWORD</button>
+        <button class="btn small" id="lock-set">CHANGE MASTER PASSWORD</button>
         <button class="btn small" id="lock-now" hidden>LOCK NOW</button>
       </div>
       <form class="editor" id="lock-form" hidden>
-        <label id="l-old-row">CURRENT VAULT PASSWORD<input id="l-old" type="password"></label>
-        <label>NEW VAULT PASSWORD (12 CHARACTERS OR MORE)<input id="l-new" type="password" required></label>
+        <label id="l-old-row">CURRENT MASTER PASSWORD<input id="l-old" type="password"></label>
+        <label>NEW MASTER PASSWORD (12 CHARACTERS OR MORE)<input id="l-new" type="password" required></label>
         <label>REPEAT IT<input id="l-again" type="password" required></label>
         <div class="result bad" id="lock-out"></div>
         <div class="row">
-          <button class="btn primary" type="submit">SAVE VAULT PASSWORD</button>
+          <button class="btn primary" type="submit">SAVE MASTER PASSWORD</button>
           <button class="btn" type="button" id="lock-cancel">CANCEL</button>
         </div>
         <p class="note">There is no way to recover this password. If you forget it, the vault cannot be opened.</p>
@@ -69,11 +69,21 @@
       <div id="sub-logins">
         <div class="bar">
           <input id="search" type="text" placeholder="Search logins" spellcheck="false">
+          <select id="sort" aria-label="Sort logins">
+            <option value="site">SORT: SITE A-Z</option>
+            <option value="user">SORT: USERNAME</option>
+            <option value="used">SORT: LAST USED</option>
+            <option value="changed">SORT: LAST CHANGED</option>
+            <option value="issues">SORT: PROBLEMS FIRST</option>
+          </select>
           <button class="btn primary" id="add-login">ADD LOGIN</button>
           <button class="btn" id="check-breaches">CHECK BREACHES</button>
-          <button class="btn" id="import-csv">IMPORT FROM DASHLANE</button>
-          <button class="btn" id="export-csv">EXPORT FOR DASHLANE</button>
+          <button class="btn" id="import-csv">IMPORT</button>
+          <button class="btn" id="export-csv">EXPORT CSV</button>
+          <button class="btn danger" id="dedupe" hidden>REMOVE COPIES</button>
         </div>
+        <div class="result" id="import-result"></div>
+        <div class="editor" id="import-review" hidden></div>
         <form class="editor" id="login-form" hidden>
           <label>SITE<input id="f-site" type="text" placeholder="example.com" spellcheck="false" required></label>
           <label>USERNAME<input id="f-user" type="text" spellcheck="false"></label>
@@ -86,8 +96,9 @@
         </form>
         <div id="logins" class="list"></div>
         <p class="note">Logins are saved as you sign in to sites and filled in for you next time. Everything in the vault is encrypted with AES-256 and never leaves this PC.
-          Import takes the .zip or credentials.csv that Dashlane exports (logins, notes and two-step codes), and also CSV files from Chrome, Edge, Bitwarden and others.
-          Export writes a CSV in Dashlane's own layout. An export file is not encrypted: delete it once it is imported.
+          IMPORT reads Dashlane exports (the .zip or credentials.csv: logins, two-step codes, secure notes, payments and IDs), Bitwarden exports (.json, password-protected .json, or .csv), and CSV files from Chrome, Edge, Firefox and others.
+          Logins already in the vault are skipped; the same account with another password is listed for you to choose. Notes on logins, cards and IDs become vault notes.
+          DUPLICATE marks a site and username saved more than once. EXPORT CSV writes Dashlane's layout, which Bitwarden also reads. An export file is not encrypted: delete it once it is imported.
           Breach checks send only the first five characters of each password's hash to haveibeenpwned.com. SITE BREACHED means the site itself reported a leak since you last changed that password.
           For logins on your phone, <a href="about:preferences#sync">turn on sync</a>. To scan your email addresses for leaks, use <a href="https://monitor.mozilla.org/">Mozilla Monitor</a>, which is free.</p>
       </div>

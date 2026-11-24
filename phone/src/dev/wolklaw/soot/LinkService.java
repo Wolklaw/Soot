@@ -46,7 +46,9 @@ import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -87,6 +89,8 @@ public final class LinkService extends Service {
     private Thread worker;
     private final Object wake = new Object();
     private int failures, forgottenInARow;
+    private final Set<String> tried = ConcurrentHashMap.newKeySet();   // addresses tried this round
+    private volatile boolean reached;    // the last session got as far as the PC's hello
     private NsdManager nsd;
     private NsdManager.DiscoveryListener discovery;
     private final ArrayDeque<NsdServiceInfo> toResolve = new ArrayDeque<>();
@@ -205,20 +209,24 @@ public final class LinkService extends Service {
     /** Wakes the connection loop now instead of at the end of its backoff (the network changed, an address was typed). */
     static void recheck() { LinkService s = running; if (s != null) s.kick(); }
 
-    private void kick() { failures = 0; synchronized (wake) { wake.notifyAll(); } }
+    private void kick() { failures = 0; tried.clear(); synchronized (wake) { wake.notifyAll(); } }
 
     // ---- the connection loop ----
 
     private void run() {
         while (!stopping) {
             if (!LinkState.paired(this)) { main.post(this::stopSelf); return; }
-            String[] where = address();
-            if (where == null) {
+            List<String[]> all = addresses();
+            if (all.isEmpty()) {
                 setState(State.SEARCHING, "");
                 pause(10);
                 continue;
             }
+            String[] where = all.get(0);
+            for (String[] hp : all) if (!tried.contains(hp[0] + ":" + hp[1])) { where = hp; break; }
+            tried.add(where[0] + ":" + where[1]);
             setState(State.CONNECTING, where[0]);
+            reached = false;
             try {
                 session(where[0], Integer.parseInt(where[1]));
             } catch (LinkConnection.Forgotten f) {
@@ -237,6 +245,10 @@ public final class LinkService extends Service {
             conn = null;
             pcFeatures = new HashSet<>();
             if (stopping) return;
+            // not reached: try the next address (home network, then Tailscale) before waiting
+            if (reached) tried.clear();
+            else if (addresses().stream().anyMatch(hp -> !tried.contains(hp[0] + ":" + hp[1]))) continue;
+            else tried.clear();
             if (state != State.FORGOTTEN) setState(failures >= 2 ? State.UNREACHABLE : State.SEARCHING, "");
             pause(BACKOFF[Math.min(failures, BACKOFF.length - 1)]);
             failures++;
@@ -247,16 +259,22 @@ public final class LinkService extends Service {
         synchronized (wake) { try { wake.wait(seconds * 1000L); } catch (InterruptedException ignored) { } }
     }
 
-    /** Where to try: the typed address, then what mDNS found, then the last address that worked. */
-    private String[] address() {
+    /** Where to try, in order: the typed address, what mDNS found, the last local address that worked,
+     *  then the PC's Tailscale addresses (for when the phone is away from home). */
+    private List<String[]> addresses() {
+        List<String[]> out = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
         String typed = LinkState.manualAddress(this);
-        if (!typed.isEmpty()) {
-            String[] hp = splitAddress(typed);
-            if (hp != null) return hp;
-        }
-        if (foundHost != null) return new String[] { foundHost, String.valueOf(foundPort) };
+        if (!typed.isEmpty()) add(out, seen, splitAddress(typed));
+        if (foundHost != null) add(out, seen, new String[] { foundHost, String.valueOf(foundPort) });
         String h = LinkState.host(this);
-        return h.isEmpty() ? null : new String[] { h, String.valueOf(LinkState.port(this)) };
+        if (!h.isEmpty()) add(out, seen, new String[] { h, String.valueOf(LinkState.port(this)) });
+        for (String t : LinkState.tailnet(this)) add(out, seen, new String[] { t, String.valueOf(LinkState.port(this)) });
+        return out;
+    }
+
+    private static void add(List<String[]> out, Set<String> seen, String[] hp) {
+        if (hp != null && seen.add(hp[0] + ":" + hp[1])) out.add(hp);
     }
 
     /** "192.168.1.23:47100" or "192.168.1.23" to host and port; null when it isn't an address. */
@@ -281,7 +299,9 @@ public final class LinkService extends Service {
             if (!"hello".equals(first.optString("type"))) throw new IOException("the PC did not answer hello");
             forgottenInARow = 0;
             failures = 0;
-            if (!host.equals(LinkState.manualAddress(this))) LinkState.saveAddress(this, host, port);
+            reached = true;
+            // remember the local address; Tailscale ones come from the PC's hello instead
+            if (!host.equals(LinkState.manualAddress(this)) && !LinkState.isTailnet(host)) LinkState.saveAddress(this, host, port);
             handle(c, first);
             c.setReadTimeout(5000);
             lastHeard = System.currentTimeMillis();
@@ -364,6 +384,12 @@ public final class LinkService extends Service {
                 Set<String> got = new HashSet<>();
                 for (int i = 0; f != null && i < f.length(); i++) got.add(f.optString(i));
                 pcFeatures = got;
+                JSONArray a = m.optJSONArray("addresses");     // the PC's Tailscale addresses, if it is on a tailnet
+                if (a != null) {
+                    List<String> tail = new ArrayList<>();
+                    for (int i = 0; i < a.length() && tail.size() < 4; i++) if (LinkState.isTailnet(a.optString(i))) tail.add(a.optString(i));
+                    LinkState.saveTailnet(this, tail);
+                }
                 JSONObject d = m.optJSONObject("device");
                 if (d != null && !d.optString("name").isEmpty() && !d.optString("name").equals(LinkState.pcName(this)))
                     LinkState.prefs(this).edit().putString("pc-name", clean(d.optString("name"), 64)).apply();
