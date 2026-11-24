@@ -15,8 +15,8 @@ android {
         applicationId = 'dev.wolklaw.soot' + idSuffix
         minSdk = 30
         targetSdk = 36
-        versionCode = 3
-        versionName = '0.3'
+        versionCode = 4
+        versionName = '0.4'
         ndk { abiFilters abi }
         buildConfigField 'boolean', 'SECURE', secure          // false only in the screenshots-allowed test build
         buildConfigField 'String', 'ENGINE', "\"${geckoview.tokenize('.')[0]}\""
