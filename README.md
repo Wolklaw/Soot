@@ -246,7 +246,7 @@ It has been tested on an Android 16 emulator against the Spark Link service (run
 harness on Windows) and against a stand-in PC ([`phone/tools/spark_link_pc.py`](phone/tools/spark_link_pc.py)).
 It has not been run on a real phone or on SparkOS itself yet. Finding the PC by mDNS, the QR camera,
 and notifications to the PC are untested. The Tailscale fallback was tested on the PC side only, with a
-reference client; the app with that change has not been built or run yet.
+reference client. The app with that change (0.4) is built but has not been run on a phone or emulator yet.
 
 ### Clear and import
 
